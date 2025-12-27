@@ -1,23 +1,55 @@
 /* =====================================================
-   SMARTCARE – FINAL STABLE UI STYLES
-   Clean • Consistent • Production-safe
+   SMARTCARE – PREMIUM HOSPITAL SAAS UI
+   Version: FINAL
+   Status: Stable • Polished • Production-ready
 ===================================================== */
 
+/* =====================================================
+   CSS VARIABLES
+===================================================== */
 :root {
-  --primary: #2563eb;
-  --primary-dark: #1e40af;
   --bg-main: #f8fafc;
   --bg-card: #ffffff;
+  --bg-soft: #eef2ff;
+
+  --primary: #2563eb;
+  --primary-dark: #1e40af;
+  --primary-light: #dbeafe;
+
   --text-main: #111827;
   --text-muted: #6b7280;
+
   --border-soft: #e5e7eb;
-  --radius: 10px;
-  --shadow: 0 10px 25px rgba(0,0,0,0.08);
+
+  --success-bg: #dcfce7;
+  --success-text: #166534;
+
+  --warning-bg: #fff3cd;
+  --warning-text: #854d0e;
+
+  --danger-bg: #fee2e2;
+  --danger-text: #991b1b;
+
+  --shadow-sm: 0 2px 6px rgba(0,0,0,0.06);
+  --shadow-md: 0 8px 20px rgba(0,0,0,0.10);
+  --shadow-lg: 0 16px 40px rgba(0,0,0,0.15);
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+
+  --transition: 0.25s ease;
 }
 
-/* RESET */
+/* =====================================================
+   RESET & BASE
+===================================================== */
 * {
   box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
@@ -25,13 +57,34 @@ body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--bg-main);
   color: var(--text-main);
+  line-height: 1.6;
 }
 
-/* ================= NAVBAR ================= */
+/* =====================================================
+   TYPOGRAPHY
+===================================================== */
+h1, h2, h3, h4 {
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  margin-top: 0;
+}
+
+p {
+  color: var(--text-muted);
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* =====================================================
+   NAVBAR (FIXED & STABLE)
+===================================================== */
 nav {
   background: var(--primary-dark);
   color: white;
-  padding: 16px 28px;
+  padding: 16px 32px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -39,111 +92,236 @@ nav {
 
 nav h2 {
   margin: 0;
+  font-size: 20px;
+}
+
+nav div {
+  display: flex;
+  gap: 20px;
 }
 
 nav a {
-  color: white;
-  margin-left: 18px;
-  text-decoration: none;
   font-weight: 500;
+  position: relative;
 }
 
-/* ================= HERO ================= */
+nav a::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  height: 2px;
+  width: 0%;
+  background: white;
+  transition: width var(--transition);
+}
+
+nav a:hover::after {
+  width: 100%;
+}
+
+/* =====================================================
+   HERO SECTION (HOME)
+===================================================== */
 .hero {
-  background: linear-gradient(135deg, #2563eb, #1e40af);
+  background: linear-gradient(135deg, #1e40af, #2563eb);
   color: white;
-  padding: 80px 24px;
-  text-align: center;
-  border-radius: 0 0 28px 28px;
+  padding: 90px 24px;
+  border-radius: 0 0 40px 40px;
+  box-shadow: var(--shadow-lg);
+}
+
+.hero-content {
+  max-width: 1100px;
+  margin: auto;
 }
 
 .hero h1 {
-  font-size: 40px;
-  margin-bottom: 12px;
+  font-size: 42px;
+  line-height: 1.2;
 }
 
 .hero p {
-  max-width: 600px;
-  margin: auto;
-  opacity: 0.95;
+  max-width: 560px;
+  font-size: 16px;
+  color: #e0e7ff;
+  margin-top: 14px;
 }
 
-/* ================= BUTTON ================= */
-button {
-  background: var(--primary);
-  color: white;
-  padding: 14px 24px;
-  border: none;
-  border-radius: var(--radius);
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-button:hover {
-  background: #1d4ed8;
-}
-
-/* ================= LOGIN PAGE ================= */
-.login-wrapper {
-  min-height: 80vh;
+.hero-buttons {
+  margin-top: 28px;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  gap: 14px;
 }
 
-.login-card {
-  width: 100%;
-  max-width: 420px;
-  background: var(--bg-card);
-  padding: 32px;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-}
-
-.login-card h2 {
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-.login-card input {
-  width: 100%;
-  padding: 14px;
-  margin-top: 12px;
-  border-radius: var(--radius);
-  border: 1px solid var(--border-soft);
-  font-size: 15px;
-}
-
-.login-card button {
-  width: 100%;
-  margin-top: 18px;
-}
-
-/* ================= AUTH MESSAGE ================= */
-.auth-message {
-  max-width: 420px;
-  margin: 100px auto;
-  padding: 20px;
-  background: #fff3cd;
-  border-radius: var(--radius);
-  border: 1px solid #fde68a;
-  text-align: center;
-  font-weight: 500;
-}
-
-/* ================= SECTION ================= */
+/* =====================================================
+   SECTIONS
+===================================================== */
 .section {
   max-width: 1100px;
   margin: auto;
   padding: 60px 24px;
 }
 
-/* ================= FOOTER ================= */
+.section.light {
+  background: var(--bg-soft);
+  border-radius: var(--radius-lg);
+}
+
+/* =====================================================
+   FORMS (GLOBAL)
+===================================================== */
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-soft);
+  margin-top: 8px;
+  font-size: 15px;
+  transition: border var(--transition), box-shadow var(--transition);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.25);
+}
+
+/* =====================================================
+   BUTTONS
+===================================================== */
+button {
+  background: var(--primary);
+  color: white;
+  padding: 14px 22px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
+}
+
+button:hover {
+  background: #1d4ed8;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+button.btn-danger {
+  background: #dc2626;
+}
+
+/* =====================================================
+   CARDS
+===================================================== */
+.card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: 22px;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+/* =====================================================
+   LOGIN / AUTH UI (NEW – SAFE)
+===================================================== */
+.auth-container {
+  max-width: 420px;
+  margin: 120px auto;
+  padding: 32px;
+  background: white;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.auth-container h2 {
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.auth-message {
+  margin-top: 16px;
+  padding: 12px;
+  text-align: center;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  border: 1px solid #fde68a;
+}
+
+/* =====================================================
+   DASHBOARD STATS
+===================================================== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.stat-box {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: 26px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.stat-box h2 {
+  font-size: 32px;
+  color: var(--primary);
+}
+
+/* =====================================================
+   DOCTOR PANEL
+===================================================== */
+.doctor-panel {
+  position: fixed;
+  top: 0;
+  right: -420px;
+  width: 400px;
+  height: 100%;
+  background: white;
+  box-shadow: var(--shadow-lg);
+  transition: right 0.35s ease;
+  z-index: 1000;
+}
+
+.doctor-panel.open {
+  right: 0;
+}
+
+/* =====================================================
+   FOOTER
+===================================================== */
 footer {
+  text-align: center;
+  padding: 28px;
   background: var(--primary-dark);
   color: white;
-  text-align: center;
-  padding: 24px;
-  margin-top: 60px;
+  margin-top: 80px;
+}
+
+/* =====================================================
+   ACCESSIBILITY
+===================================================== */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
 }
