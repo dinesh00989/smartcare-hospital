@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Reports | SmartCare</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- CLEAN NAVBAR -->
+<nav>
+  <h2>🏥 SmartCare</h2>
+  <div>
+    <a href="index.html">Home</a>
+    <a href="doctors.html">Doctors</a>
+    <a href="appointments.html">Appointments</a>
+    <a href="prescription.html">Prescription</a>
+  </div>
+</nav>
+
+<!-- ADMIN LOGIN -->
+<section class="section light" id="adminLogin">
+  <h3>🔐 Admin Access Required</h3>
+  <p style="color:gray;font-size:14px;">
+    Reports and analytics are restricted to hospital administrators.
+  </p>
+
+  <input id="adminUser" placeholder="Admin Username">
+  <input id="adminPass" type="password" placeholder="Password">
+  <button onclick="adminLogin()">Login</button>
+
+  <p id="adminError" class="error"></p>
+</section>
+
+<!-- REPORTS MODULE (HIDDEN UNTIL LOGIN) -->
+<section id="adminModule" style="display:none;">
+
+  <!-- PAGE INTRO -->
+  <section class="section">
+    <h2>📊 System Reports & Analytics</h2>
+    <p>
+      This dashboard provides a high-level overview of hospital operations,
+      helping administrators monitor activity and system usage.
+    </p>
+  </section>
+
+  <!-- REPORT SUMMARY -->
+  <section class="section light">
+    <h3>Hospital Statistics</h3>
+    <p id="report"></p>
+  </section>
+
+  <!-- LOGOUT -->
+  <section class="section">
+    <button onclick="adminLogout()">Logout Admin</button>
+  </section>
+
+</section>
+
+<script src="script.js"></script>
+</body>
+</html>

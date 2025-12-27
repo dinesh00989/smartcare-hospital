@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Appointments | SmartCare</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ================= NAVBAR ================= -->
+<nav>
+  <h2>🏥 SmartCare</h2>
+  <div style="display:flex;gap:18px;align-items:center;">
+    <a href="index.html">Home</a>
+    <a href="appointments.html"><b>Appointments</b></a>
+    <a href="doctors.html">Doctors</a>
+    <a href="prescription.html">Prescription</a>
+    <a href="admin.html">Admin</a>
+  </div>
+</nav>
+
+<!-- ================= APPOINTMENTS PAGE ================= -->
+<section class="section">
+  <div style="display:grid;grid-template-columns:1.1fr 0.9fr;gap:40px;">
+
+    <!-- ===== LEFT: BOOK APPOINTMENT (PATIENT) ===== -->
+    <div class="light" style="padding:30px;border-radius:18px;">
+      <h2>🗓️ Book Appointment</h2>
+      <p style="color:gray;font-size:14px;">
+        Patients can book appointments without login.
+      </p>
+
+      <input id="aptPatient" placeholder="Patient Name">
+      <input id="aptDoctor" placeholder="Doctor Name">
+      <input type="date" id="aptDate">
+
+      <button onclick="addAppointment()">Book Appointment</button>
+
+      <p id="aptMsg" style="margin-top:10px;"></p>
+    </div>
+
+    <!-- ===== RIGHT: VIEW APPOINTMENTS (ADMIN / DOCTOR) ===== -->
+    <div class="card">
+      <h3>📋 Appointments</h3>
+      <ul id="appointmentList"></ul>
+    </div>
+
+  </div>
+</section>
+
+<script>
+/* ================= DATE RESTRICTION ================= */
+const today = new Date().toISOString().split("T")[0];
+document.getElementById("aptDate").min = today;
+
+/* ================= BOOK APPOINTMENT ================= */
+function addAppointment() {
+  const patient = document.getElementById("aptPatient").value.trim();
+  const doctor = document.getElementById("aptDoctor").value.trim();
+  const date = document.getElementById("aptDate").value;
+  const msg = document.getElementById("aptMsg");
+
+  if (!patient || !doctor || !date) {
+    msg.style.color = "red";
+    msg.innerText = "Please fill all fields";
+    return;
+  }
+
+  const appointments = JSON.parse(localStorage.getItem("appointments")) || [];
+
+  appointments.push({
+    patient,
+    doctor,
+    date
+  });
+
+  localStorage.setItem("appointments", JSON.stringify(appointments));
+
+  msg.style.color = "green";
+  msg.innerText = "Appointment booked successfully";
+
+  document.getElementById("aptPatient").value = "";
+  document.getElementById("aptDoctor").value = "";
+  document.getElementById("aptDate").value = "";
+
+  loadAppointments();
+}
+
+/* ================= LOAD APPOINTMENTS ================= */
+function loadAppointments() {
+  const list = document.getElementById("appointmentList");
+  const appointments = JSON.parse(localStorage.getItem("appointments")) || [];
+  const role = localStorage.getItem("role");
+
+  if (appointments.length === 0) {
+    list.innerHTML = "<li>No appointments yet</li>";
+    return;
+  }
+
+  let filtered = appointments;
+
+  // Doctor sees only their appointments
+  if (role === "doctor") {
+    filtered = appointments.filter(a =>
+      a.doctor.toLowerCase().includes("dr")
+    );
+  }
+
+  list.innerHTML = filtered.map(a =>
+    `<li>${a.patient} → ${a.doctor} (${a.date})</li>`
+  ).join("");
+}
+
+/* ================= INIT ================= */
+loadAppointments();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Prescription | SmartCare</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ================= NAVBAR ================= -->
+<nav>
+  <h2>🏥 SmartCare</h2>
+  <div style="display:flex;gap:18px;align-items:center;">
+    <a href="index.html">Home</a>
+    <a href="appointments.html">Appointments</a>
+    <a href="doctors.html">Doctors</a>
+    <a href="prescription.html"><b>Prescription</b></a>
+    <a href="admin.html">Admin</a>
+  </div>
+</nav>
+
+<!-- ================= PRESCRIPTION SECTION ================= -->
+<section class="section" id="prescriptionSection" style="display:none;">
+
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <h2>💊 Prescription Panel</h2>
+    <button onclick="logout()" class="btn-danger">Logout</button>
+  </div>
+
+  <!-- ===== ADD PRESCRIPTION (DOCTOR) ===== -->
+  <div class="light" style="padding:30px;border-radius:18px;margin-top:30px;">
+    <h3>✍️ Add Prescription</h3>
+
+    <input id="pPatient" placeholder="Patient Name">
+    <input id="pDoctor" placeholder="Doctor Name">
+    <textarea id="pMedicines" placeholder="Medicines & Instructions"></textarea>
+
+    <button onclick="addPrescription()">Save Prescription</button>
+
+    <p id="pMsg" style="margin-top:10px;"></p>
+  </div>
+
+  <!-- ===== VIEW PRESCRIPTIONS ===== -->
+  <div class="card" style="margin-top:40px;">
+    <h3>📄 Prescriptions</h3>
+    <ul id="prescriptionList"></ul>
+  </div>
+
+</section>
+
+<script>
+/* ================= AUTH CHECK ================= */
+const token = localStorage.getItem("token");
+const role = localStorage.getItem("role");
+
+if (!token) {
+  alert("Please login first");
+  window.location.href = "login.html";
+}
+
+/* ================= LOGOUT ================= */
+function logout() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("role");
+  window.location.href = "login.html";
+}
+
+/* ================= ADD PRESCRIPTION ================= */
+function addPrescription() {
+  if (role !== "doctor") {
+    alert("Only doctors can add prescriptions");
+    return;
+  }
+
+  const patient = document.getElementById("pPatient").value.trim();
+  const doctor = document.getElementById("pDoctor").value.trim();
+  const medicines = document.getElementById("pMedicines").value.trim();
+  const msg = document.getElementById("pMsg");
+
+  if (!patient || !doctor || !medicines) {
+    msg.style.color = "red";
+    msg.innerText = "Please fill all fields";
+    return;
+  }
+
+  const prescriptions = JSON.parse(localStorage.getItem("prescriptions")) || [];
+
+  prescriptions.push({
+    patient,
+    doctor,
+    medicines,
+    date: new Date().toLocaleDateString()
+  });
+
+  localStorage.setItem("prescriptions", JSON.stringify(prescriptions));
+
+  msg.style.color = "green";
+  msg.innerText = "Prescription saved successfully";
+
+  document.getElementById("pPatient").value = "";
+  document.getElementById("pDoctor").value = "";
+  document.getElementById("pMedicines").value = "";
+
+  loadPrescriptions();
+}
+
+/* ================= LOAD PRESCRIPTIONS ================= */
+function loadPrescriptions() {
+  const list = document.getElementById("prescriptionList");
+  const prescriptions = JSON.parse(localStorage.getItem("prescriptions")) || [];
+
+  if (prescriptions.length === 0) {
+    list.innerHTML = "<li>No prescriptions available</li>";
+    return;
+  }
+
+  list.innerHTML = prescriptions.map(p =>
+    `<li>
+      <b>${p.patient}</b> – ${p.doctor}<br>
+      ${p.medicines}<br>
+      <small>${p.date}</small>
+    </li>`
+  ).join("");
+}
+
+/* ================= INIT ================= */
+document.getElementById("prescriptionSection").style.display = "block";
+loadPrescriptions();
+</script>
+
+</body>
+</html>
