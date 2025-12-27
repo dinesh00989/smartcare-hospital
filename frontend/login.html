@@ -1,21 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>SmartCare Login</title>
-  <link rel="stylesheet" href="/frontend/style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <!-- ✅ Correct CSS path -->
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <h2>SmartCare Login</h2>
+  <!-- ================= LOGIN CARD ================= -->
+  <div class="center">
+    <div class="card" style="width:320px; padding:30px;">
+      <h2 style="text-align:center;">🏥 SmartCare</h2>
+      <p style="text-align:center; color:gray;">
+        Please login to continue
+      </p>
 
-  <input type="email" id="email" placeholder="Email" /><br><br>
-  <input type="password" id="password" placeholder="Password" /><br><br>
+      <input type="email" id="email" placeholder="Email" />
+      <input type="password" id="password" placeholder="Password" />
 
-  <button onclick="login()">Login</button>
+      <button onclick="login()" style="width:100%;">Login</button>
 
-  <p id="msg"></p>
+      <p id="msg" style="text-align:center; margin-top:12px;"></p>
+    </div>
+  </div>
 
   <script>
     async function login() {
@@ -23,7 +33,7 @@
       const password = document.getElementById("password").value;
       const msg = document.getElementById("msg");
 
-      msg.style.color = "black";
+      msg.style.color = "gray";
       msg.innerText = "Logging in...";
 
       try {
@@ -46,19 +56,20 @@
           return;
         }
 
-        // ✅ Save token & role
+        // ✅ Save auth
         localStorage.setItem("token", data.token);
         localStorage.setItem("role", data.role);
 
         msg.style.color = "green";
         msg.innerText = "Login successful ✅";
 
-        // ✅ Redirect based on role
-        if (data.role === "admin") {
-          window.location.href = "admin.html";
-        } else {
-          window.location.href = "doctors.html";
-        }
+        setTimeout(() => {
+          if (data.role === "admin") {
+            window.location.href = "admin.html";
+          } else {
+            window.location.href = "doctors.html";
+          }
+        }, 800);
 
       } catch (err) {
         console.error(err);
