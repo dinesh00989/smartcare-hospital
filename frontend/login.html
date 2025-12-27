@@ -1,83 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>SmartCare Login</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- ✅ Correct CSS path -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- ================= LOGIN CARD ================= -->
-  <div class="center">
-    <div class="card" style="width:320px; padding:30px;">
-      <h2 style="text-align:center;">🏥 SmartCare</h2>
-      <p style="text-align:center; color:gray;">
-        Please login to continue
-      </p>
+<nav>
+  <h2>🏥 SmartCare</h2>
+</nav>
 
-      <input type="email" id="email" placeholder="Email" />
-      <input type="password" id="password" placeholder="Password" />
+<div class="login-wrapper">
+  <div class="login-card">
+    <h2>Doctor / Admin Login</h2>
 
-      <button onclick="login()" style="width:100%;">Login</button>
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Password" />
 
-      <p id="msg" style="text-align:center; margin-top:12px;"></p>
-    </div>
+    <button onclick="login()">Login</button>
+
+    <p id="msg" style="text-align:center;margin-top:12px;"></p>
   </div>
+</div>
 
-  <script>
-    async function login() {
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      const msg = document.getElementById("msg");
+<script>
+async function login() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  const msg = document.getElementById("msg");
 
-      msg.style.color = "gray";
-      msg.innerText = "Logging in...";
+  msg.innerText = "Logging in...";
 
-      try {
-        const res = await fetch(
-          "https://smartcare-hospital.onrender.com/login",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ email, password })
-          }
-        );
+  try {
+    const res = await fetch("https://smartcare-hospital.onrender.com/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
 
-        const data = await res.json();
+    const data = await res.json();
 
-        if (!res.ok) {
-          msg.style.color = "red";
-          msg.innerText = data.message || "Login failed";
-          return;
-        }
-
-        // ✅ Save auth
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("role", data.role);
-
-        msg.style.color = "green";
-        msg.innerText = "Login successful ✅";
-
-        setTimeout(() => {
-          if (data.role === "admin") {
-            window.location.href = "admin.html";
-          } else {
-            window.location.href = "doctors.html";
-          }
-        }, 800);
-
-      } catch (err) {
-        console.error(err);
-        msg.style.color = "red";
-        msg.innerText = "Server error ❌";
-      }
+    if (!res.ok) {
+      msg.style.color = "red";
+      msg.innerText = data.message;
+      return;
     }
-  </script>
+
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("role", data.role);
+
+    msg.style.color = "green";
+    msg.innerText = "Login successful";
+
+    window.location.href =
+      data.role === "admin" ? "admin.html" : "doctors.html";
+
+  } catch {
+    msg.style.color = "red";
+    msg.innerText = "Server error";
+  }
+}
+</script>
 
 </body>
 </html>
