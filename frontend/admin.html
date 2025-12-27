@@ -6,7 +6,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
+
+<!-- ================= AUTH GUARD (RUNS FIRST) ================= -->
+<script>
+  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
+
+  if (!token || role !== "admin") {
+    alert("Access denied. Admins only.");
+    window.location.href = "login.html";
+  }
+</script>
 
 <!-- ================= NAVBAR ================= -->
 <nav>
@@ -17,15 +29,13 @@
     <a href="doctors.html">Doctors</a>
     <a href="prescription.html">Prescription</a>
     <a href="admin.html"><b>Admin</b></a>
+    <button onclick="logout()" class="btn-danger">Logout</button>
   </div>
 </nav>
 
 <!-- ================= ADMIN DASHBOARD ================= -->
-<section class="section" id="adminDashboard" style="display:none;">
-  <div style="display:flex;justify-content:space-between;align-items:center;">
-    <h2>📊 System Overview (Admin)</h2>
-    <button onclick="adminLogout()" class="btn-danger">Logout</button>
-  </div>
+<section class="section" id="adminDashboard">
+  <h2>📊 System Overview (Admin)</h2>
 
   <div class="stats-grid">
     <div class="stat-box">
@@ -53,27 +63,16 @@
 </section>
 
 <script>
-/* ================= AUTH CHECK ================= */
-const token = localStorage.getItem("token");
-const role = localStorage.getItem("role");
-
-if (!token || role !== "admin") {
-  alert("Access denied. Admins only.");
-  window.location.href = "login.html";
-}
-
 /* ================= LOGOUT ================= */
-function adminLogout() {
+function logout() {
   localStorage.removeItem("token");
   localStorage.removeItem("role");
   window.location.href = "login.html";
 }
 
-/* ================= LOAD DASHBOARD ================= */
+/* ================= LOAD DASHBOARD (TEMP DATA) ================= */
 function loadAdminDashboard() {
-  document.getElementById("adminDashboard").style.display = "block";
-
-  // TEMP local data (until backend APIs added)
+  // Temporary local data until backend APIs are added
   const doctors = JSON.parse(localStorage.getItem("doctors")) || [];
   const appointments = JSON.parse(localStorage.getItem("appointments")) || [];
   const prescriptions = JSON.parse(localStorage.getItem("prescriptions")) || [];
@@ -82,32 +81,27 @@ function loadAdminDashboard() {
   document.getElementById("statAppointments").innerText = appointments.length;
   document.getElementById("statPrescriptions").innerText = prescriptions.length;
 
-  const apptList = document.getElementById("adminAppointments");
-  apptList.innerHTML = appointments.length
-    ? appointments.map(a =>
-        `<li>${a.patient} → ${a.doctor} (${a.date})</li>`
-      ).join("")
-    : "<li>No appointments</li>";
+  document.getElementById("adminAppointments").innerHTML =
+    appointments.length
+      ? appointments.map(a => `<li>${a.patient} → ${a.doctor} (${a.date})</li>`).join("")
+      : "<li>No appointments</li>";
 
-  const preList = document.getElementById("adminPrescriptions");
-  preList.innerHTML = prescriptions.length
-    ? prescriptions.map(p =>
-        `<li>${p.patient} – ${p.template}</li>`
-      ).join("")
-    : "<li>No prescriptions</li>";
+  document.getElementById("adminPrescriptions").innerHTML =
+    prescriptions.length
+      ? prescriptions.map(p => `<li>${p.patient} – ${p.template}</li>`).join("")
+      : "<li>No prescriptions</li>";
 
-  const docStats = document.getElementById("adminDoctorStats");
   const grouped = {};
   appointments.forEach(a => {
     grouped[a.doctor] = (grouped[a.doctor] || 0) + 1;
   });
 
-  docStats.innerHTML = Object.keys(grouped).length
-    ? Object.entries(grouped)
-        .map(([doc, count]) =>
-          `<li>${doc} – ${count} appointments</li>`
-        ).join("")
-    : "<li>No doctor activity</li>";
+  document.getElementById("adminDoctorStats").innerHTML =
+    Object.keys(grouped).length
+      ? Object.entries(grouped)
+          .map(([doc, count]) => `<li>${doc} – ${count} appointments</li>`)
+          .join("")
+      : "<li>No doctor activity</li>";
 }
 
 /* ================= INIT ================= */

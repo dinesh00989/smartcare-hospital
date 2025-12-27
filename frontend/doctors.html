@@ -2,11 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Doctors | SmartCare</title>
+  <title>Doctor Dashboard | SmartCare</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
+
+<!-- ================= AUTH GUARD (RUNS FIRST) ================= -->
+<script>
+  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
+
+  if (!token || role !== "doctor") {
+    alert("Access denied. Doctors only.");
+    window.location.href = "login.html";
+  }
+</script>
 
 <!-- ================= NAVBAR ================= -->
 <nav>
@@ -16,45 +28,30 @@
     <a href="appointments.html">Appointments</a>
     <a href="doctors.html"><b>Doctors</b></a>
     <a href="prescription.html">Prescription</a>
-    <a href="admin.html">Admin</a>
+    <button onclick="logout()" class="btn-danger">Logout</button>
   </div>
 </nav>
 
 <!-- ================= DOCTOR DASHBOARD ================= -->
-<section class="section" id="doctorDashboard" style="display:none;">
-  <div style="display:flex;justify-content:space-between;align-items:center;">
-    <h2>👨‍⚕️ Doctor Dashboard</h2>
-    <button onclick="doctorLogout()" class="btn-danger">Logout</button>
-  </div>
+<section class="section" id="doctorDashboard">
+  <h2>👨‍⚕️ Doctor Dashboard</h2>
 
   <h3 style="margin-top:30px;">📋 My Appointments</h3>
   <div id="doctorAppointmentCards" class="card-grid"></div>
 </section>
 
 <script>
-/* ================= AUTH CHECK ================= */
-const token = localStorage.getItem("token");
-const role = localStorage.getItem("role");
-
-if (!token || role !== "doctor") {
-  alert("Access denied. Doctors only.");
-  window.location.href = "login.html";
-}
-
 /* ================= LOGOUT ================= */
-function doctorLogout() {
+function logout() {
   localStorage.removeItem("token");
   localStorage.removeItem("role");
   window.location.href = "login.html";
 }
 
-/* ================= LOAD DOCTOR DATA ================= */
+/* ================= LOAD DOCTOR DATA (TEMP) ================= */
 function loadDoctorDashboard() {
-  document.getElementById("doctorDashboard").style.display = "block";
-
-  // TEMP DATA (until backend appointment API is connected)
+  // Temporary data until backend API is added
   const appointments = JSON.parse(localStorage.getItem("appointments")) || [];
-
   const container = document.getElementById("doctorAppointmentCards");
 
   if (appointments.length === 0) {
