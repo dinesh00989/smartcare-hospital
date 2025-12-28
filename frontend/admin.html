@@ -3,110 +3,188 @@
 <head>
   <meta charset="UTF-8">
   <title>Admin Dashboard | SmartCare</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { background:#f8fafc; }
+
+    .center-wrap {
+      min-height: calc(100vh - 80px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-card, .admin-card {
+      background:#fff;
+      padding:35px;
+      width:100%;
+      max-width:420px;
+      border-radius:16px;
+      box-shadow:0 20px 45px rgba(0,0,0,0.12);
+      animation:fadeIn .4s ease;
+    }
+
+    .login-card h2 {
+      text-align:center;
+      margin-bottom:20px;
+    }
+
+    input {
+      width:100%;
+      padding:12px;
+      margin:8px 0;
+      border-radius:8px;
+      border:1px solid #ccc;
+    }
+
+    button {
+      width:100%;
+      padding:14px;
+      margin-top:12px;
+      background:#2563eb;
+      color:#fff;
+      border:none;
+      border-radius:10px;
+      cursor:pointer;
+      font-size:15px;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow:0 10px 25px rgba(37,99,235,.4);
+    }
+
+    .stats {
+      display:grid;
+      grid-template-columns: repeat(auto-fit,minmax(120px,1fr));
+      gap:15px;
+      margin-bottom:25px;
+    }
+
+    .stat {
+      background:#eef2ff;
+      padding:15px;
+      border-radius:12px;
+      text-align:center;
+      font-weight:bold;
+    }
+
+    ul { padding-left:18px; }
+
+    @keyframes fadeIn {
+      from {opacity:0; transform:translateY(10px);}
+      to {opacity:1; transform:translateY(0);}
+    }
+  </style>
 </head>
 
 <body>
 
-<!-- ================= AUTH GUARD (RUNS FIRST) ================= -->
-<script>
-  const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role");
-
-  if (!token || role !== "admin") {
-    alert("Access denied. Admins only.");
-    window.location.href = "login.html";
-  }
-</script>
-
-<!-- ================= NAVBAR ================= -->
+<!-- NAVBAR -->
 <nav>
   <h2>🏥 SmartCare</h2>
-  <div style="display:flex;gap:18px;align-items:center;">
+  <div>
     <a href="index.html">Home</a>
     <a href="appointments.html">Appointments</a>
     <a href="doctors.html">Doctors</a>
     <a href="prescription.html">Prescription</a>
     <a href="admin.html"><b>Admin</b></a>
-    <button onclick="logout()" class="btn-danger">Logout</button>
   </div>
 </nav>
 
-<!-- ================= ADMIN DASHBOARD ================= -->
-<section class="section" id="adminDashboard">
-  <h2>📊 System Overview (Admin)</h2>
-
-  <div class="stats-grid">
-    <div class="stat-box">
-      <h2 id="statDoctors">0</h2>
-      <p>Doctors</p>
-    </div>
-    <div class="stat-box">
-      <h2 id="statAppointments">0</h2>
-      <p>Appointments</p>
-    </div>
-    <div class="stat-box">
-      <h2 id="statPrescriptions">0</h2>
-      <p>Prescriptions</p>
-    </div>
+<!-- ================= ADMIN LOGIN ================= -->
+<div class="center-wrap" id="loginBox">
+  <div class="login-card">
+    <h2>🔐 Admin Login</h2>
+    <input id="adminUser" placeholder="Username (admin)">
+    <input id="adminPass" type="password" placeholder="Password">
+    <button onclick="adminLogin()">Login</button>
+    <p id="loginError" style="color:red;text-align:center;"></p>
   </div>
+</div>
 
-  <h3 style="margin-top:40px;">🗓️ All Appointments</h3>
-  <ul id="adminAppointments"></ul>
+<!-- ================= ADMIN DASHBOARD ================= -->
+<div class="center-wrap" id="adminBox" style="display:none;">
+  <div class="admin-card" style="max-width:700px;width:100%;">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <h2>📊 Admin Dashboard</h2>
+      <button onclick="logout()" style="background:#ef4444;width:auto;padding:10px 16px;">Logout</button>
+    </div>
 
-  <h3 style="margin-top:40px;">💊 All Prescriptions</h3>
-  <ul id="adminPrescriptions"></ul>
+    <div class="stats">
+      <div class="stat">Doctors<br><span id="statDoctors">0</span></div>
+      <div class="stat">Appointments<br><span id="statAppointments">0</span></div>
+      <div class="stat">Prescriptions<br><span id="statPrescriptions">0</span></div>
+    </div>
 
-  <h3 style="margin-top:40px;">👨‍⚕️ Doctor Activity</h3>
-  <ul id="adminDoctorStats"></ul>
-</section>
+    <h3>🗓️ Appointments</h3>
+    <ul id="adminAppointments"></ul>
+
+    <h3 style="margin-top:20px;">💊 Prescriptions</h3>
+    <ul id="adminPrescriptions"></ul>
+  </div>
+</div>
 
 <script>
-/* ================= LOGOUT ================= */
-function logout() {
-  localStorage.removeItem("token");
-  localStorage.removeItem("role");
-  window.location.href = "login.html";
+const API = "http://localhost:3000";
+
+/* ========= ADMIN LOGIN ========= */
+function adminLogin(){
+  const username = adminUser.value.trim().toLowerCase();
+  const password = adminPass.value.trim();
+
+  if(!username || !password){
+    loginError.textContent="Enter credentials";
+    return;
+  }
+
+  fetch(`${API}/login`,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    credentials:"include",
+    body:JSON.stringify({ username, password })
+  })
+  .then(res=>res.json())
+  .then(data=>{
+    if(data.role==="admin"){
+      loginBox.style.display="none";
+      adminBox.style.display="flex";
+      loadAdminData();
+    } else {
+      loginError.textContent="Access denied";
+    }
+  });
 }
 
-/* ================= LOAD DASHBOARD (TEMP DATA) ================= */
-function loadAdminDashboard() {
-  // Temporary local data until backend APIs are added
-  const doctors = JSON.parse(localStorage.getItem("doctors")) || [];
-  const appointments = JSON.parse(localStorage.getItem("appointments")) || [];
-  const prescriptions = JSON.parse(localStorage.getItem("prescriptions")) || [];
+/* ========= LOAD ADMIN DATA ========= */
+function loadAdminData(){
+  Promise.all([
+    fetch(`${API}/appointments`,{ credentials:"include" }).then(r=>r.json()),
+    fetch(`${API}/prescriptions`,{ credentials:"include" }).then(r=>r.json())
+  ]).then(([appointments,prescriptions])=>{
+    statDoctors.textContent = 4; // seeded doctors
+    statAppointments.textContent = appointments.length;
+    statPrescriptions.textContent = prescriptions.length;
 
-  document.getElementById("statDoctors").innerText = doctors.length;
-  document.getElementById("statAppointments").innerText = appointments.length;
-  document.getElementById("statPrescriptions").innerText = prescriptions.length;
-
-  document.getElementById("adminAppointments").innerHTML =
-    appointments.length
-      ? appointments.map(a => `<li>${a.patient} → ${a.doctor} (${a.date})</li>`).join("")
+    adminAppointments.innerHTML = appointments.length
+      ? appointments.map(a=>`<li>${a.patientName} → ${a.doctor} (${a.date})</li>`).join("")
       : "<li>No appointments</li>";
 
-  document.getElementById("adminPrescriptions").innerHTML =
-    prescriptions.length
-      ? prescriptions.map(p => `<li>${p.patient} – ${p.template}</li>`).join("")
+    adminPrescriptions.innerHTML = prescriptions.length
+      ? prescriptions.map(p=>`<li>${p.patientName} – ${p.doctor}</li>`).join("")
       : "<li>No prescriptions</li>";
-
-  const grouped = {};
-  appointments.forEach(a => {
-    grouped[a.doctor] = (grouped[a.doctor] || 0) + 1;
   });
-
-  document.getElementById("adminDoctorStats").innerHTML =
-    Object.keys(grouped).length
-      ? Object.entries(grouped)
-          .map(([doc, count]) => `<li>${doc} – ${count} appointments</li>`)
-          .join("")
-      : "<li>No doctor activity</li>";
 }
 
-/* ================= INIT ================= */
-loadAdminDashboard();
+/* ========= LOGOUT ========= */
+function logout(){
+  fetch(`${API}/logout`,{
+    method:"POST",
+    credentials:"include"
+  }).then(()=>location.reload());
+}
 </script>
 
 </body>

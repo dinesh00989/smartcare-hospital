@@ -1,149 +1,160 @@
-// ================= ENV SETUP =================
+// ================= ENV =================
 require("dotenv").config();
 
 // ================= IMPORTS =================
 const express = require("express");
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
 const cors = require("cors");
+const session = require("express-session");
+const MongoStore = require("connect-mongo").default;
 
-// ================= APP SETUP =================
+// ================= APP =================
 const app = express();
 app.use(express.json());
 
 // ================= CORS =================
-// Allow Netlify frontend + local testing
 app.use(cors({
-  origin: "*"
+  origin: true,
+  credentials: true
 }));
 
-// ================= ENV VARIABLES =================
-const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET;
+// ================= SESSION =================
+app.use(session({
+  secret: "smartcare-secret",
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGO_URI
+  })
+}));
 
-// ================= MONGODB CONNECT =================
+// ================= DB CONNECT =================
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB Atlas connected ✅"))
-  .catch(err => console.error("MongoDB connection error ❌", err));
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch(err => console.error("❌ MongoDB Error", err));
 
-// ================= MODEL =================
-const DoctorSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  role: { type: String, enum: ["admin", "doctor"], required: true }
-});
+// ================= MODELS =================
 
-const Doctor = mongoose.model("Doctor", DoctorSchema);
+// User
+const User = mongoose.model("User", new mongoose.Schema({
+  username: String,
+  password: String,
+  role: String
+}));
 
-// ================= ROOT ROUTE =================
-app.get("/", (req, res) => {
-  res.send("SmartCare Backend Running 🚀");
-});
+// Appointment
+const Appointment = mongoose.model("Appointment", new mongoose.Schema({
+  patientName: String,
+  age: Number,
+  doctor: String,
+  date: String,
+  symptoms: String
+}));
 
-// ================= REGISTER =================
-app.post("/register", async (req, res) => {
-  try {
-    const { name, email, password, role } = req.body;
+// Prescription
+const Prescription = mongoose.model("Prescription", new mongoose.Schema({
+  patientName: String,
+  doctor: String,
+  diagnosis: String,
+  medicines: String,
+  notes: String,
+  date: String
+}));
 
-    if (!name || !email || !password || !role) {
-      return res.status(400).json({ message: "All fields required" });
-    }
+// ================= SEED USERS =================
+async function seedUsers() {
+  await User.deleteMany();
 
-    const exists = await Doctor.findOne({ email });
-    if (exists) {
-      return res.status(400).json({ message: "User already exists" });
-    }
+  const users = [
+    { username: "admin", password: "admin", role: "admin" },
+    { username: "drrao", password: "doctor", role: "doctor" },
+    { username: "drmeena", password: "doctor", role: "doctor" },
+    { username: "drkumar", password: "doctor", role: "doctor" },
+    { username: "drsharma", password: "doctor", role: "doctor" }
+  ];
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    await Doctor.create({
-      name,
-      email,
-      password: hashedPassword,
-      role
-    });
-
-    res.json({ message: "Registered successfully" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Register error" });
-  }
-});
-
-// ================= LOGIN =================
-app.post("/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    const user = await Doctor.findOne({ email });
-    if (!user) {
-      return res.status(401).json({ message: "Invalid email" });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ message: "Invalid password" });
-    }
-
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      JWT_SECRET,
-      { expiresIn: "1h" }
-    );
-
-    res.json({
-      token,
-      role: user.role
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Login error" });
-  }
-});
-
-// ================= AUTH MIDDLEWARE =================
-function auth(req, res, next) {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader) {
-    return res.status(401).json({ message: "No token provided" });
+  for (let u of users) {
+    const hashed = await bcrypt.hash(u.password, 10);
+    await User.create({ ...u, password: hashed });
   }
 
-  const token = authHeader.startsWith("Bearer ")
-    ? authHeader.split(" ")[1]
-    : authHeader;
-
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
-    next();
-  } catch {
-    return res.status(401).json({ message: "Invalid token" });
-  }
+  console.log("👥 Users in DB:");
+  console.log(await User.find());
 }
 
-// ================= ROLE CHECK =================
-function roleCheck(role) {
+seedUsers();
+
+// ================= AUTH MIDDLEWARE =================
+function requireRole(role) {
   return (req, res, next) => {
-    if (req.user.role !== role) {
+    if (!req.session.user)
+      return res.status(401).json({ message: "Login required" });
+
+    if (req.session.user.role !== role)
       return res.status(403).json({ message: "Access denied" });
-    }
+
     next();
   };
 }
 
-// ================= DASHBOARD ROUTES =================
-app.get("/admin/dashboard", auth, roleCheck("admin"), (req, res) => {
+// ================= ROUTES =================
+
+// Root
+app.get("/", (req, res) => {
+  res.send("🚀 SmartCare Backend Running");
+});
+
+// Login
+app.post("/login", async (req, res) => {
+  const { username, password } = req.body;
+
+  const user = await User.findOne({ username });
+  if (!user) return res.status(401).json({ message: "Invalid user" });
+
+  const ok = await bcrypt.compare(password, user.password);
+  if (!ok) return res.status(401).json({ message: "Wrong password" });
+
+  req.session.user = { id: user._id, role: user.role };
+  res.json({ role: user.role });
+});
+
+// Logout
+app.post("/logout", (req, res) => {
+  req.session.destroy(() => res.json({ message: "Logged out" }));
+});
+
+// Appointments
+app.post("/appointments", async (req, res) => {
+  await Appointment.create(req.body);
+  res.json({ message: "Appointment saved" });
+});
+
+app.get("/appointments", async (req, res) => {
+  res.json(await Appointment.find());
+});
+
+// Prescriptions
+app.post("/prescriptions", async (req, res) => {
+  await Prescription.create(req.body);
+  res.json({ message: "Prescription saved" });
+});
+
+app.get("/prescriptions", async (req, res) => {
+  res.json(await Prescription.find());
+});
+
+// Dashboards
+app.get("/admin/dashboard", requireRole("admin"), (req, res) => {
   res.send("Welcome Admin 👩‍💼");
 });
 
-app.get("/doctor/dashboard", auth, roleCheck("doctor"), (req, res) => {
+app.get("/doctor/dashboard", requireRole("doctor"), (req, res) => {
   res.send("Welcome Doctor 👨‍⚕️");
 });
 
-// ================= START SERVER =================
+// ================= START =================
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT} 🚀`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
