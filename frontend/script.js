@@ -8,7 +8,7 @@ function $(id) {
   return document.getElementById(id);
 }
 
-const API = "http://localhost:3000";
+const API = "https://smartcare-hospital.onrender.com/";
 
 /* ========= DOCTOR DATA ========= */
 const doctors = [
