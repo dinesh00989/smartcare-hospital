@@ -1,49 +1,60 @@
-// ================= ENV =================
+/****************************************
+ SMARTCARE – FINAL BACKEND SERVER
+ Stable • Secure • Netlify + Render Ready
+*****************************************/
+
 require("dotenv").config();
 
-// ================= IMPORTS =================
 const express = require("express");
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const cors = require("cors");
 const session = require("express-session");
-const MongoStore = require("connect-mongo").default;
+const MongoStore = require("connect-mongo");
 
-// ================= APP =================
 const app = express();
+
+/* ============ MIDDLEWARE ============ */
 app.use(express.json());
 
-// ================= CORS =================
 app.use(cors({
-  origin: true,
+  origin: "*", // Netlify + local
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
 }));
 
-// ================= SESSION =================
+// Allow preflight requests
+app.options("*", cors());
+
+/* ============ SESSION ============ */
 app.use(session({
+  name: "smartcare.sid",
   secret: "smartcare-secret",
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
     mongoUrl: process.env.MONGO_URI
-  })
+  }),
+  cookie: {
+    httpOnly: true,
+    secure: false, // true only if HTTPS + custom domain
+    maxAge: 1000 * 60 * 60 // 1 hour
+  }
 }));
 
-// ================= DB CONNECT =================
+/* ============ DATABASE ============ */
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB Connected"))
   .catch(err => console.error("❌ MongoDB Error", err));
 
-// ================= MODELS =================
-
-// User
+/* ============ MODELS ============ */
 const User = mongoose.model("User", new mongoose.Schema({
   username: String,
   password: String,
   role: String
 }));
 
-// Appointment
 const Appointment = mongoose.model("Appointment", new mongoose.Schema({
   patientName: String,
   age: Number,
@@ -52,7 +63,6 @@ const Appointment = mongoose.model("Appointment", new mongoose.Schema({
   symptoms: String
 }));
 
-// Prescription
 const Prescription = mongoose.model("Prescription", new mongoose.Schema({
   patientName: String,
   doctor: String,
@@ -62,9 +72,13 @@ const Prescription = mongoose.model("Prescription", new mongoose.Schema({
   date: String
 }));
 
-// ================= SEED USERS =================
+/* ============ SEED USERS (SAFE) ============ */
 async function seedUsers() {
-  await User.deleteMany();
+  const count = await User.countDocuments();
+  if (count > 0) {
+    console.log("👥 Users already exist");
+    return;
+  }
 
   const users = [
     { username: "admin", password: "admin", role: "admin" },
@@ -79,26 +93,26 @@ async function seedUsers() {
     await User.create({ ...u, password: hashed });
   }
 
-  console.log("👥 Users in DB:");
-  console.log(await User.find());
+  console.log("👥 Default users created");
 }
-
 seedUsers();
 
-// ================= AUTH MIDDLEWARE =================
+/* ============ AUTH HELPERS ============ */
+function isLoggedIn(req, res, next) {
+  if (!req.session.user)
+    return res.status(401).json({ message: "Login required" });
+  next();
+}
+
 function requireRole(role) {
   return (req, res, next) => {
-    if (!req.session.user)
-      return res.status(401).json({ message: "Login required" });
-
     if (req.session.user.role !== role)
       return res.status(403).json({ message: "Access denied" });
-
     next();
   };
 }
 
-// ================= ROUTES =================
+/* ============ ROUTES ============ */
 
 // Root
 app.get("/", (req, res) => {
@@ -110,50 +124,68 @@ app.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
   const user = await User.findOne({ username });
-  if (!user) return res.status(401).json({ message: "Invalid user" });
+  if (!user) return res.status(401).json({ message: "Invalid credentials" });
 
   const ok = await bcrypt.compare(password, user.password);
-  if (!ok) return res.status(401).json({ message: "Wrong password" });
+  if (!ok) return res.status(401).json({ message: "Invalid credentials" });
 
-  req.session.user = { id: user._id, role: user.role };
+  req.session.user = {
+    id: user._id,
+    username: user.username,
+    role: user.role
+  };
+
   res.json({ role: user.role });
 });
 
 // Logout
 app.post("/logout", (req, res) => {
-  req.session.destroy(() => res.json({ message: "Logged out" }));
+  req.session.destroy(() => {
+    res.json({ message: "Logged out" });
+  });
 });
 
-// Appointments
+// Create Appointment (Patient)
 app.post("/appointments", async (req, res) => {
   await Appointment.create(req.body);
   res.json({ message: "Appointment saved" });
 });
 
-app.get("/appointments", async (req, res) => {
-  res.json(await Appointment.find());
+// Get Appointments (Doctor only – filtered)
+app.get("/appointments", isLoggedIn, requireRole("doctor"), async (req, res) => {
+  const doctorMap = {
+    drrao: "Dr. A. Rao",
+    drmeena: "Dr. Meena S.",
+    drkumar: "Dr. K. Kumar",
+    drsharma: "Dr. P. Sharma"
+  };
+
+  const doctorName = doctorMap[req.session.user.username];
+  const data = await Appointment.find({ doctor: doctorName });
+
+  res.json(data);
 });
 
 // Prescriptions
-app.post("/prescriptions", async (req, res) => {
+app.post("/prescriptions", isLoggedIn, requireRole("doctor"), async (req, res) => {
   await Prescription.create(req.body);
   res.json({ message: "Prescription saved" });
 });
 
-app.get("/prescriptions", async (req, res) => {
+app.get("/prescriptions", isLoggedIn, async (req, res) => {
   res.json(await Prescription.find());
 });
 
 // Dashboards
-app.get("/admin/dashboard", requireRole("admin"), (req, res) => {
+app.get("/admin/dashboard", isLoggedIn, requireRole("admin"), (req, res) => {
   res.send("Welcome Admin 👩‍💼");
 });
 
-app.get("/doctor/dashboard", requireRole("doctor"), (req, res) => {
+app.get("/doctor/dashboard", isLoggedIn, requireRole("doctor"), (req, res) => {
   res.send("Welcome Doctor 👨‍⚕️");
 });
 
-// ================= START =================
+/* ============ START SERVER ============ */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
