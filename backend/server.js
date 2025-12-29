@@ -17,15 +17,15 @@ const app = express();
 /* ============ MIDDLEWARE ============ */
 app.use(express.json());
 
+/* ✅ CORRECT CORS FOR NETLIFY + RENDER */
 app.use(cors({
-  origin: "*", // Netlify + local
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  origin: [
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
+    "https://smartcare-hospital.netlify.app"   // 🔁 YOUR NETLIFY URL
+  ],
   credentials: true
 }));
-
-// Allow preflight requests
-app.options("*", cors());
 
 /* ============ SESSION ============ */
 app.use(session({
@@ -38,7 +38,8 @@ app.use(session({
   }),
   cookie: {
     httpOnly: true,
-    secure: false, // true only if HTTPS + custom domain
+    secure: true,          // ✅ REQUIRED FOR HTTPS (Render)
+    sameSite: "none",      // ✅ REQUIRED FOR NETLIFY → RENDER
     maxAge: 1000 * 60 * 60 // 1 hour
   }
 }));
@@ -72,13 +73,10 @@ const Prescription = mongoose.model("Prescription", new mongoose.Schema({
   date: String
 }));
 
-/* ============ SEED USERS (SAFE) ============ */
+/* ============ SEED USERS (RUNS ONCE) ============ */
 async function seedUsers() {
   const count = await User.countDocuments();
-  if (count > 0) {
-    console.log("👥 Users already exist");
-    return;
-  }
+  if (count > 0) return;
 
   const users = [
     { username: "admin", password: "admin", role: "admin" },
@@ -141,17 +139,18 @@ app.post("/login", async (req, res) => {
 // Logout
 app.post("/logout", (req, res) => {
   req.session.destroy(() => {
+    res.clearCookie("smartcare.sid");
     res.json({ message: "Logged out" });
   });
 });
 
-// Create Appointment (Patient)
+// Create Appointment (NO LOGIN REQUIRED – patient)
 app.post("/appointments", async (req, res) => {
   await Appointment.create(req.body);
   res.json({ message: "Appointment saved" });
 });
 
-// Get Appointments (Doctor only – filtered)
+// Get Appointments (Doctor only)
 app.get("/appointments", isLoggedIn, requireRole("doctor"), async (req, res) => {
   const doctorMap = {
     drrao: "Dr. A. Rao",
@@ -174,15 +173,6 @@ app.post("/prescriptions", isLoggedIn, requireRole("doctor"), async (req, res) =
 
 app.get("/prescriptions", isLoggedIn, async (req, res) => {
   res.json(await Prescription.find());
-});
-
-// Dashboards
-app.get("/admin/dashboard", isLoggedIn, requireRole("admin"), (req, res) => {
-  res.send("Welcome Admin 👩‍💼");
-});
-
-app.get("/doctor/dashboard", isLoggedIn, requireRole("doctor"), (req, res) => {
-  res.send("Welcome Doctor 👨‍⚕️");
 });
 
 /* ============ START SERVER ============ */

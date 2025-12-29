@@ -129,7 +129,7 @@ function addAppointment() {
     return;
   }
 
-  fetch("http://localhost:3000/appointments", {
+  fetch("https://smartcare-hospital.onrender.com/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
