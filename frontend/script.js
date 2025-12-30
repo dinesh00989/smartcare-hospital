@@ -1,6 +1,6 @@
 /*************************************************
  SMARTCARE – FINAL FULL STACK SCRIPT
- Stable • Demo Ready • Exam Safe
+ Stable • Demo Ready • Exam Safe • Production Safe
 **************************************************/
 
 /* ========= UTIL ========= */
@@ -8,7 +8,7 @@ function $(id) {
   return document.getElementById(id);
 }
 
-/* ✅ NO TRAILING SLASH */
+/* ✅ BACKEND BASE URL (NO TRAILING SLASH) */
 const API = "https://smartcare-hospital.onrender.com";
 
 /* ========= DOCTOR DATA ========= */
@@ -22,7 +22,7 @@ const doctors = [
 /* ========= DOM READY ========= */
 document.addEventListener("DOMContentLoaded", () => {
 
-  /* Populate doctor dropdown */
+  /* Populate doctor dropdown (Appointments page) */
   if ($("aptDoctor")) {
     $("aptDoctor").innerHTML = `<option value="">-- Select Doctor --</option>`;
     doctors.forEach(d => {
@@ -33,13 +33,13 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  /* Auto-load doctor dashboard if session exists */
-  if ($("doctorDashboard")) {
+  /* Load doctor appointments ONLY if dashboard exists */
+  if ($("doctorAppointmentCards")) {
     loadDoctorAppointments();
   }
 });
 
-/* ========= ADD APPOINTMENT ========= */
+/* ========= ADD APPOINTMENT (PUBLIC) ========= */
 function addAppointment() {
   const patientName = $("aptPatient").value.trim();
   const doctor = $("aptDoctor").value;
@@ -53,19 +53,20 @@ function addAppointment() {
   fetch(`${API}/appointments`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    credentials: "include",
     body: JSON.stringify({ patientName, doctor, date })
   })
     .then(res => {
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error("Failed");
       return res.json();
     })
     .then(() => {
-      alert("Appointment booked successfully");
+      alert("✅ Appointment booked successfully");
       $("aptPatient").value = "";
       $("aptDate").value = "";
     })
-    .catch(() => alert("Server error while booking appointment"));
+    .catch(() => {
+      alert("❌ Server error while booking appointment");
+    });
 }
 
 /* ========= DOCTOR LOGIN ========= */
@@ -85,7 +86,7 @@ function doctorLogin() {
     body: JSON.stringify({ username, password })
   })
     .then(res => {
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error("Invalid");
       return res.json();
     })
     .then(data => {
@@ -102,15 +103,18 @@ function doctorLogin() {
     });
 }
 
-/* ========= LOAD DOCTOR APPOINTMENTS ========= */
+/* ========= LOAD DOCTOR APPOINTMENTS (PROTECTED) ========= */
 function loadDoctorAppointments() {
-  if (!$("doctorAppointmentCards")) return;
-
   fetch(`${API}/appointments`, {
     credentials: "include"
   })
     .then(res => {
-      if (!res.ok) throw new Error();
+      if (res.status === 401) {
+        $("doctorAppointmentCards").innerHTML =
+          "<p>Please login to view appointments</p>";
+        throw new Error("Not logged in");
+      }
+      if (!res.ok) throw new Error("Error");
       return res.json();
     })
     .then(data => {
@@ -132,10 +136,7 @@ function loadDoctorAppointments() {
         wrap.appendChild(card);
       });
     })
-    .catch(() => {
-      $("doctorAppointmentCards").innerHTML =
-        "<p>Please login to view appointments</p>";
-    });
+    .catch(() => {});
 }
 
 /* ========= LOGOUT ========= */
