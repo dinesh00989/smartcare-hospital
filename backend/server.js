@@ -10,22 +10,35 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const cors = require("cors");
 const session = require("express-session");
-const MongoStore = require("connect-mongo");
+const MongoStore = require("connect-mongo"); // ✅ FIXED
 
 const app = express();
 
 /* ============ MIDDLEWARE ============ */
 app.use(express.json());
 
-/* ✅ CORRECT CORS FOR NETLIFY + RENDER */
 app.use(cors({
   origin: [
     "http://localhost:5500",
     "http://127.0.0.1:5500",
-    "https://smartcare-hospital.netlify.app"   // 🔁 YOUR NETLIFY URL
+    "https://smartcare-hospital.netlify.app"
   ],
   credentials: true
 }));
+
+/* ============ DATABASE ============ */
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch(err => {
+    console.error("❌ MongoDB Error", err);
+    process.exit(1);
+  });
+
+/* ============ SESSION STORE ============ */
+const store = MongoStore.create({
+  mongoUrl: process.env.MONGO_URI,
+  collectionName: "sessions"
+});
 
 /* ============ SESSION ============ */
 app.use(session({
@@ -33,21 +46,14 @@ app.use(session({
   secret: "smartcare-secret",
   resave: false,
   saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGO_URI
-  }),
+  store,
   cookie: {
     httpOnly: true,
-    secure: true,          // ✅ REQUIRED FOR HTTPS (Render)
-    sameSite: "none",      // ✅ REQUIRED FOR NETLIFY → RENDER
-    maxAge: 1000 * 60 * 60 // 1 hour
+    secure: true,       // Render = HTTPS
+    sameSite: "none",   // Netlify → Render
+    maxAge: 1000 * 60 * 60
   }
 }));
-
-/* ============ DATABASE ============ */
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB Connected"))
-  .catch(err => console.error("❌ MongoDB Error", err));
 
 /* ============ MODELS ============ */
 const User = mongoose.model("User", new mongoose.Schema({
@@ -58,22 +64,18 @@ const User = mongoose.model("User", new mongoose.Schema({
 
 const Appointment = mongoose.model("Appointment", new mongoose.Schema({
   patientName: String,
-  age: Number,
   doctor: String,
-  date: String,
-  symptoms: String
+  date: String
 }));
 
 const Prescription = mongoose.model("Prescription", new mongoose.Schema({
   patientName: String,
   doctor: String,
-  diagnosis: String,
   medicines: String,
-  notes: String,
   date: String
 }));
 
-/* ============ SEED USERS (RUNS ONCE) ============ */
+/* ============ SEED USERS (RUN ONCE) ============ */
 async function seedUsers() {
   const count = await User.countDocuments();
   if (count > 0) return;
@@ -87,8 +89,8 @@ async function seedUsers() {
   ];
 
   for (let u of users) {
-    const hashed = await bcrypt.hash(u.password, 10);
-    await User.create({ ...u, password: hashed });
+    const hash = await bcrypt.hash(u.password, 10);
+    await User.create({ ...u, password: hash });
   }
 
   console.log("👥 Default users created");
@@ -111,13 +113,10 @@ function requireRole(role) {
 }
 
 /* ============ ROUTES ============ */
-
-// Root
-app.get("/", (req, res) => {
+app.get("/", (_, res) => {
   res.send("🚀 SmartCare Backend Running");
 });
 
-// Login
 app.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
@@ -136,7 +135,6 @@ app.post("/login", async (req, res) => {
   res.json({ role: user.role });
 });
 
-// Logout
 app.post("/logout", (req, res) => {
   req.session.destroy(() => {
     res.clearCookie("smartcare.sid");
@@ -144,35 +142,24 @@ app.post("/logout", (req, res) => {
   });
 });
 
-// Create Appointment (NO LOGIN REQUIRED – patient)
+/* ============ APPOINTMENTS ============ */
 app.post("/appointments", async (req, res) => {
   await Appointment.create(req.body);
   res.json({ message: "Appointment saved" });
 });
 
-// Get Appointments (Doctor only)
 app.get("/appointments", isLoggedIn, requireRole("doctor"), async (req, res) => {
-  const doctorMap = {
+  const map = {
     drrao: "Dr. A. Rao",
     drmeena: "Dr. Meena S.",
     drkumar: "Dr. K. Kumar",
     drsharma: "Dr. P. Sharma"
   };
 
-  const doctorName = doctorMap[req.session.user.username];
-  const data = await Appointment.find({ doctor: doctorName });
+  const doctor = map[req.session.user.username];
+  const data = await Appointment.find({ doctor });
 
   res.json(data);
-});
-
-// Prescriptions
-app.post("/prescriptions", isLoggedIn, requireRole("doctor"), async (req, res) => {
-  await Prescription.create(req.body);
-  res.json({ message: "Prescription saved" });
-});
-
-app.get("/prescriptions", isLoggedIn, async (req, res) => {
-  res.json(await Prescription.find());
 });
 
 /* ============ START SERVER ============ */
