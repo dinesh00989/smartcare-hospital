@@ -8,10 +8,11 @@ function $(id) {
   return document.getElementById(id);
 }
 
-/* ✅ BACKEND BASE URL (NO TRAILING SLASH) */
+/* ========= BACKEND BASE URL ========= */
+/* ❌ NO TRAILING SLASH */
 const API = "https://smartcare-hospital.onrender.com";
 
-/* ========= DOCTOR DATA ========= */
+/* ========= DOCTOR MASTER DATA ========= */
 const doctors = [
   { username: "drrao", name: "Dr. A. Rao", speciality: "General Physician" },
   { username: "drmeena", name: "Dr. Meena S.", speciality: "Pediatrician" },
@@ -19,10 +20,17 @@ const doctors = [
   { username: "drsharma", name: "Dr. P. Sharma", speciality: "Cardiologist" }
 ];
 
+const doctorMap = {
+  drrao: "Dr. A. Rao",
+  drmeena: "Dr. Meena S.",
+  drkumar: "Dr. K. Kumar",
+  drsharma: "Dr. P. Sharma"
+};
+
 /* ========= DOM READY ========= */
 document.addEventListener("DOMContentLoaded", () => {
 
-  /* Populate doctor dropdown (Appointments page) */
+  /* Populate doctor dropdown (appointments page) */
   if ($("aptDoctor")) {
     $("aptDoctor").innerHTML = `<option value="">-- Select Doctor --</option>`;
     doctors.forEach(d => {
@@ -33,17 +41,19 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  /* Load doctor appointments ONLY if dashboard exists */
+  /* Load doctor appointments only if dashboard exists */
   if ($("doctorAppointmentCards")) {
     loadDoctorAppointments();
   }
 });
 
-/* ========= ADD APPOINTMENT (PUBLIC) ========= */
+/* =====================================================
+   APPOINTMENTS – PUBLIC (NO LOGIN REQUIRED)
+===================================================== */
 function addAppointment() {
-  const patientName = $("aptPatient").value.trim();
-  const doctor = $("aptDoctor").value;
-  const date = $("aptDate").value;
+  const patientName = $("aptPatient")?.value.trim();
+  const doctor = $("aptDoctor")?.value;
+  const date = $("aptDate")?.value;
 
   if (!patientName || !doctor || !date) {
     alert("Please fill all fields");
@@ -56,7 +66,7 @@ function addAppointment() {
     body: JSON.stringify({ patientName, doctor, date })
   })
     .then(res => {
-      if (!res.ok) throw new Error("Failed");
+      if (!res.ok) throw new Error();
       return res.json();
     })
     .then(() => {
@@ -69,7 +79,9 @@ function addAppointment() {
     });
 }
 
-/* ========= DOCTOR LOGIN ========= */
+/* =====================================================
+   DOCTOR LOGIN (USED BY DOCTOR + PRESCRIPTION)
+===================================================== */
 function doctorLogin() {
   const username = $("docUser").value.trim().toLowerCase();
   const password = $("docPass").value.trim();
@@ -86,25 +98,38 @@ function doctorLogin() {
     body: JSON.stringify({ username, password })
   })
     .then(res => {
-      if (!res.ok) throw new Error("Invalid");
+      if (!res.ok) throw new Error();
       return res.json();
     })
     .then(data => {
-      if (data.role === "doctor") {
-        $("doctorLoginBox").style.display = "none";
-        $("doctorDashboard").style.display = "block";
-        loadDoctorAppointments();
-      } else {
-        $("loginError").textContent = "Invalid credentials";
+      if (data.role !== "doctor") {
+        $("loginError").textContent = "Access denied";
+        return;
       }
+
+      /* Hide login, show dashboard/prescription */
+      if ($("doctorLoginBox")) $("doctorLoginBox").style.display = "none";
+      if ($("doctorDashboard")) $("doctorDashboard").style.display = "block";
+      if ($("prescriptionBox")) $("prescriptionBox").style.display = "flex";
+
+      /* Auto-fill doctor name in prescription */
+      if ($("pDoctor")) {
+        $("pDoctor").value = doctorMap[username];
+      }
+
+      loadDoctorAppointments();
     })
     .catch(() => {
-      $("loginError").textContent = "Login failed";
+      $("loginError").textContent = "Invalid credentials";
     });
 }
 
-/* ========= LOAD DOCTOR APPOINTMENTS (PROTECTED) ========= */
+/* =====================================================
+   LOAD DOCTOR APPOINTMENTS (PROTECTED)
+===================================================== */
 function loadDoctorAppointments() {
+  if (!$("doctorAppointmentCards")) return;
+
   fetch(`${API}/appointments`, {
     credentials: "include"
   })
@@ -112,9 +137,8 @@ function loadDoctorAppointments() {
       if (res.status === 401) {
         $("doctorAppointmentCards").innerHTML =
           "<p>Please login to view appointments</p>";
-        throw new Error("Not logged in");
+        throw new Error();
       }
-      if (!res.ok) throw new Error("Error");
       return res.json();
     })
     .then(data => {
@@ -139,7 +163,80 @@ function loadDoctorAppointments() {
     .catch(() => {});
 }
 
-/* ========= LOGOUT ========= */
+/* =====================================================
+   PRESCRIPTION LOGIC
+===================================================== */
+function applyTemplate(t) {
+  if (t === "fever") {
+    pDiagnosis.value = "Fever";
+    pMedicines.value = "Paracetamol 650mg – twice daily";
+    pNotes.value = "Drink fluids & take rest";
+  }
+  if (t === "cold") {
+    pDiagnosis.value = "Cold & Cough";
+    pMedicines.value = "Cetirizine, Cough syrup";
+    pNotes.value = "Avoid cold items";
+  }
+  if (t === "gastric") {
+    pDiagnosis.value = "Gastric Issue";
+    pMedicines.value = "Omeprazole";
+    pNotes.value = "Avoid spicy food";
+  }
+  if (t === "bp") {
+    pDiagnosis.value = "Blood Pressure";
+    pMedicines.value = "Amlodipine";
+    pNotes.value = "Monitor BP regularly";
+  }
+  updatePreview();
+}
+
+function updatePreview() {
+  if (!$("previewBox")) return;
+
+  previewBox.innerHTML = `
+    <div class="rx">℞</div>
+    <p><b>Patient:</b> ${pPatient.value || "—"}</p>
+    <p><b>Doctor:</b> ${pDoctor.value || "—"}</p>
+    <p><b>Diagnosis:</b> ${pDiagnosis.value || "—"}</p>
+    <p><b>Medicines:</b><br>${pMedicines.value || "—"}</p>
+    <p><b>Advice:</b><br>${pNotes.value || "—"}</p>
+  `;
+}
+
+function savePrescription() {
+  if (!pPatient.value || !pDoctor.value || !pDiagnosis.value || !pMedicines.value) {
+    alert("Fill all required fields");
+    return;
+  }
+
+  fetch(`${API}/prescriptions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({
+      patientName: pPatient.value,
+      doctor: pDoctor.value,
+      diagnosis: pDiagnosis.value,
+      medicines: pMedicines.value,
+      notes: pNotes.value,
+      date: new Date().toLocaleDateString()
+    })
+  })
+    .then(res => {
+      if (!res.ok) throw new Error();
+      return res.json();
+    })
+    .then(() => {
+      alert("✅ Prescription saved successfully");
+      document.querySelectorAll("input, textarea").forEach(i => i.value = "");
+      updatePreview();
+    })
+    .catch(() => alert("❌ Failed to save prescription"));
+}
+
+/* =====================================================
+   LOGOUT
+===================================================== */
 function doctorLogout() {
   fetch(`${API}/logout`, {
     method: "POST",

@@ -23,13 +23,6 @@
       max-width:420px;
       border-radius:16px;
       box-shadow:0 20px 45px rgba(0,0,0,0.12);
-      animation:fadeIn .4s ease;
-    }
-
-    .login-card h2,
-    .prescription-card h2 {
-      text-align:center;
-      margin-bottom:20px;
     }
 
     input, textarea, select {
@@ -38,7 +31,6 @@
       margin:8px 0;
       border-radius:8px;
       border:1px solid #ccc;
-      font-size:14px;
     }
 
     textarea { resize:none; height:80px; }
@@ -52,16 +44,7 @@
       border:none;
       border-radius:10px;
       cursor:pointer;
-      font-size:15px;
-      transition:.2s;
     }
-
-    button:hover {
-      transform:translateY(-2px);
-      box-shadow:0 10px 25px rgba(37,99,235,.4);
-    }
-
-    .template-btns select { margin-top:10px; }
 
     .preview {
       margin-top:15px;
@@ -73,18 +56,6 @@
     }
 
     .rx { font-size:22px; font-weight:bold; }
-
-    .top-bar {
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      margin-bottom:15px;
-    }
-
-    @keyframes fadeIn {
-      from {opacity:0; transform:translateY(10px);}
-      to {opacity:1; transform:translateY(0);}
-    }
   </style>
 </head>
 
@@ -101,8 +72,8 @@
   </div>
 </nav>
 
-<!-- ================= LOGIN ================= -->
-<div class="center-wrap" id="loginBox">
+<!-- LOGIN -->
+<div class="center-wrap" id="doctorLoginBox">
   <div class="login-card">
     <h2>👨‍⚕️ Doctor Login</h2>
     <input id="docUser" placeholder="Username (drrao)">
@@ -112,17 +83,13 @@
   </div>
 </div>
 
-<!-- ================= PRESCRIPTION ================= -->
+<!-- PRESCRIPTION -->
 <div class="center-wrap" id="prescriptionBox" style="display:none;">
   <div class="prescription-card">
-
-    <div class="top-bar">
-      <h2>🧾 Smart Prescription</h2>
-      <button onclick="logout()" style="background:#ef4444;">Logout</button>
-    </div>
+    <h2>🧾 Smart Prescription</h2>
 
     <input id="pPatient" placeholder="Patient Name">
-    <input id="pDoctor" placeholder="Doctor Name">
+    <input id="pDoctor" readonly>
     <input id="pDiagnosis" placeholder="Diagnosis">
 
     <select onchange="applyTemplate(this.value)">
@@ -136,129 +103,15 @@
     <textarea id="pMedicines" placeholder="Medicines"></textarea>
     <textarea id="pNotes" placeholder="Advice"></textarea>
 
-    <div class="preview" id="previewBox">
-      <div class="rx">℞</div>
-      <p><b>Patient:</b> —</p>
-      <p><b>Doctor:</b> —</p>
-      <p><b>Diagnosis:</b> —</p>
-      <p><b>Medicines:</b> —</p>
-      <p><b>Advice:</b> —</p>
-    </div>
+    <div class="preview" id="previewBox"></div>
 
     <button onclick="savePrescription()">Save Prescription</button>
+    <button onclick="doctorLogout()" style="background:#ef4444;">Logout</button>
   </div>
 </div>
 
-<script>
-const API = "https://smartcare-hospital.onrender.com";
-let loggedDoctor = "";
-
-/* ========= LOGIN ========= */
-function doctorLogin() {
-  const username = docUser.value.trim().toLowerCase();
-  const password = docPass.value.trim();
-
-  if (!username || !password) {
-    loginError.textContent = "Enter username & password";
-    return;
-  }
-
-  fetch(`${API}/login`, {
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    credentials:"include",
-    body:JSON.stringify({ username, password })
-  })
-  .then(res=>res.json())
-  .then(data=>{
-    if(data.role==="doctor"){
-      loggedDoctor = username;
-      pDoctor.value = username.toUpperCase();
-      loginBox.style.display="none";
-      prescriptionBox.style.display="flex";
-      updatePreview();
-    } else {
-      loginError.textContent="Invalid credentials";
-    }
-  });
-}
-
-/* ========= LOGOUT ========= */
-function logout(){
-  fetch(`${API}/logout`,{
-    method:"POST",
-    credentials:"include"
-  }).then(()=>location.reload());
-}
-
-/* ========= PREVIEW ========= */
-["pPatient","pDoctor","pDiagnosis","pMedicines","pNotes"]
-.forEach(id=>document.getElementById(id).addEventListener("input",updatePreview));
-
-function updatePreview(){
-  previewBox.innerHTML = `
-    <div class="rx">℞</div>
-    <p><b>Patient:</b> ${pPatient.value||"—"}</p>
-    <p><b>Doctor:</b> ${pDoctor.value||"—"}</p>
-    <p><b>Diagnosis:</b> ${pDiagnosis.value||"—"}</p>
-    <p><b>Medicines:</b><br>${pMedicines.value||"—"}</p>
-    <p><b>Advice:</b><br>${pNotes.value||"—"}</p>
-  `;
-}
-
-/* ========= TEMPLATES ========= */
-function applyTemplate(t){
-  if(t==="fever"){
-    pDiagnosis.value="Fever";
-    pMedicines.value="Paracetamol 650mg – twice daily";
-    pNotes.value="Drink fluids & take rest";
-  }
-  if(t==="cold"){
-    pDiagnosis.value="Cold & Cough";
-    pMedicines.value="Cetirizine, Cough syrup";
-    pNotes.value="Avoid cold items";
-  }
-  if(t==="gastric"){
-    pDiagnosis.value="Gastric Issue";
-    pMedicines.value="Omeprazole";
-    pNotes.value="Avoid spicy food";
-  }
-  if(t==="bp"){
-    pDiagnosis.value="Blood Pressure";
-    pMedicines.value="Amlodipine";
-    pNotes.value="Monitor BP regularly";
-  }
-  updatePreview();
-}
-
-/* ========= SAVE ========= */
-function savePrescription(){
-  if(!pPatient.value || !pDoctor.value || !pDiagnosis.value || !pMedicines.value){
-    alert("Fill all required fields");
-    return;
-  }
-
-  fetch(`${API}/prescriptions`,{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    credentials:"include",
-    body:JSON.stringify({
-      patientName:pPatient.value,
-      doctor:pDoctor.value,
-      diagnosis:pDiagnosis.value,
-      medicines:pMedicines.value,
-      notes:pNotes.value,
-      date:new Date().toLocaleDateString()
-    })
-  })
-  .then(res=>res.json())
-  .then(()=>{
-    alert("Prescription saved successfully");
-    document.querySelectorAll("input,textarea").forEach(i=>i.value="");
-    updatePreview();
-  });
-}
-</script>
+<!-- ✅ ONLY ONE SCRIPT -->
+<script src="script.js"></script>
 
 </body>
 </html>

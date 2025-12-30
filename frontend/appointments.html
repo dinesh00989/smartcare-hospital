@@ -34,15 +34,6 @@
       background: #eef2ff;
     }
 
-    .doctor-card h4 {
-      margin-bottom: 6px;
-    }
-
-    .doctor-card span {
-      color: #555;
-      font-size: 14px;
-    }
-
     .selected-doctor {
       margin-top: 15px;
       font-weight: bold;
@@ -53,7 +44,6 @@
 
 <body>
 
-<!-- NAVBAR -->
 <nav>
   <h2>🏥 SmartCare</h2>
   <div>
@@ -64,7 +54,6 @@
   </div>
 </nav>
 
-<!-- APPOINTMENT SECTION -->
 <section class="section">
   <h2>📅 Book Appointment</h2>
 
@@ -77,15 +66,14 @@
 
   <p class="selected-doctor" id="selectedDoctorText"></p>
 
-  <button onclick="addAppointment()" style="margin-top:20px;">
+  <button type="button" onclick="addAppointment()" style="margin-top:20px;">
     Book Appointment
   </button>
 </section>
 
-<script src="script.js"></script>
-
 <script>
-/* ========= DOCTOR LIST FOR APPOINTMENTS ========= */
+const API = "https://smartcare-hospital.onrender.com";
+
 const appointmentDoctors = [
   { name: "Dr. A. Rao", speciality: "General Physician" },
   { name: "Dr. Meena S.", speciality: "Pediatrician" },
@@ -101,14 +89,10 @@ const text = document.getElementById("selectedDoctorText");
 appointmentDoctors.forEach(d => {
   const card = document.createElement("div");
   card.className = "doctor-card";
-  card.innerHTML = `
-    <h4>${d.name}</h4>
-    <span>${d.speciality}</span>
-  `;
+  card.innerHTML = `<h4>${d.name}</h4><span>${d.speciality}</span>`;
 
   card.onclick = () => {
-    document
-      .querySelectorAll(".doctor-card")
+    document.querySelectorAll(".doctor-card")
       .forEach(c => c.classList.remove("selected"));
 
     card.classList.add("selected");
@@ -119,7 +103,6 @@ appointmentDoctors.forEach(d => {
   list.appendChild(card);
 });
 
-/* ========= OVERRIDE addAppointment ========= */
 function addAppointment() {
   const patientName = document.getElementById("aptPatient").value.trim();
   const date = document.getElementById("aptDate").value;
@@ -129,14 +112,10 @@ function addAppointment() {
     return;
   }
 
-  fetch("https://smartcare-hospital.onrender.com", {
+  fetch(`${API}/appointments`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      patientName,
-      doctor: selectedDoctor,
-      date
-    })
+    body: JSON.stringify({ patientName, doctor: selectedDoctor, date })
   })
   .then(res => res.json())
   .then(() => {
@@ -145,10 +124,10 @@ function addAppointment() {
     document.getElementById("aptDate").value = "";
     selectedDoctor = "";
     text.textContent = "";
-    document
-      .querySelectorAll(".doctor-card")
+    document.querySelectorAll(".doctor-card")
       .forEach(c => c.classList.remove("selected"));
-  });
+  })
+  .catch(() => alert("Server error"));
 }
 </script>
 

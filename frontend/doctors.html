@@ -61,7 +61,7 @@
 
 <body>
 
-<!-- ================= NAVBAR ================= -->
+<!-- NAVBAR -->
 <nav>
   <h2>🏥 SmartCare</h2>
   <div>
@@ -73,7 +73,7 @@
   </div>
 </nav>
 
-<!-- ================= LOGIN ================= -->
+<!-- LOGIN -->
 <div class="center-wrap" id="doctorLoginBox">
   <div class="login-card">
     <h2>👨‍⚕️ Doctor Login</h2>
@@ -84,101 +84,15 @@
   </div>
 </div>
 
-<!-- ================= DASHBOARD ================= -->
+<!-- DASHBOARD -->
 <section class="section" id="doctorDashboard" style="display:none;">
-  <h2 id="doctorTitle"></h2>
+  <h2>👨‍⚕️ Doctor Dashboard</h2>
   <h3 style="margin-top:20px;">📋 My Appointments</h3>
   <div id="doctorAppointmentCards" class="card-grid"></div>
 </section>
 
-<script>
-const API = "https://smartcare-hospital.onrender.com";
-let loggedDoctor = null;
-
-/* ========= LOGIN ========= */
-function doctorLogin() {
-  const username = document.getElementById("docUser").value.trim().toLowerCase();
-  const password = document.getElementById("docPass").value.trim();
-
-  if (!username || !password) {
-    document.getElementById("loginError").textContent = "Enter username and password";
-    return;
-  }
-
-  fetch(`${API}/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ username, password })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.role === "doctor") {
-      loggedDoctor = username;
-      document.getElementById("doctorLoginBox").style.display = "none";
-      document.getElementById("doctorDashboard").style.display = "block";
-      document.getElementById("doctorTitle").textContent =
-        "👨‍⚕️ Welcome " + username.toUpperCase();
-      loadDoctorAppointments();
-    } else {
-      document.getElementById("loginError").textContent = "Invalid credentials";
-    }
-  });
-}
-
-/* ========= LOAD APPOINTMENTS ========= */
-function loadDoctorAppointments() {
-  fetch(`${API}/appointments`, { credentials: "include" })
-    .then(res => res.json())
-    .then(data => {
-      const wrap = document.getElementById("doctorAppointmentCards");
-      wrap.innerHTML = "";
-
-      const doctorNameMap = {
-        drrao: "Dr. A. Rao",
-        drmeena: "Dr. Meena S.",
-        drkumar: "Dr. K. Kumar",
-        drsharma: "Dr. P. Sharma"
-      };
-
-     const doctorFullName = doctorNameMap[loggedDoctor];
-
-const myAppointments = data.filter(a =>
-  a.doctor && a.doctor.toLowerCase().includes(doctorFullName.toLowerCase())
-);
-
-
-      if (!myAppointments.length) {
-        wrap.innerHTML = "<p>No appointments yet</p>";
-        return;
-      }
-
-      myAppointments.forEach(a => {
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `
-          <b>Patient:</b> ${a.patientName}<br>
-          <b>Date:</b> ${a.date}
-        `;
-        wrap.appendChild(card);
-      });
-    });
-}
-
-/* ========= LOGOUT ========= */
-function doctorLogout() {
-  fetch(`${API}/logout`, {
-    method: "POST",
-    credentials: "include"
-  }).then(() => {
-    loggedDoctor = null;
-    document.getElementById("doctorDashboard").style.display = "none";
-    document.getElementById("doctorLoginBox").style.display = "flex";
-    document.getElementById("docUser").value = "";
-    document.getElementById("docPass").value = "";
-  });
-}
-</script>
+<!-- ✅ ONLY ONE SCRIPT FILE -->
+<script src="script.js"></script>
 
 </body>
 </html>
