@@ -1,6 +1,6 @@
 /****************************************
  SMARTCARE – FINAL BACKEND SERVER
- Stable • Secure • Netlify + Render Ready
+ Render + Netlify • Stable • Exam Safe
 *****************************************/
 
 require("dotenv").config();
@@ -10,7 +10,9 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const cors = require("cors");
 const session = require("express-session");
-const MongoStore = require("connect-mongo"); // ✅ FIXED
+
+/* ✅ UNIVERSAL CONNECT-MONGO FIX */
+const MongoStore = require("connect-mongo")(session);
 
 const app = express();
 
@@ -34,22 +36,19 @@ mongoose.connect(process.env.MONGO_URI)
     process.exit(1);
   });
 
-/* ============ SESSION STORE ============ */
-const store = MongoStore.create({
-  mongoUrl: process.env.MONGO_URI,
-  collectionName: "sessions"
-});
-
 /* ============ SESSION ============ */
 app.use(session({
   name: "smartcare.sid",
   secret: "smartcare-secret",
   resave: false,
   saveUninitialized: false,
-  store,
+  store: new MongoStore({
+    mongooseConnection: mongoose.connection,
+    collection: "sessions"
+  }),
   cookie: {
     httpOnly: true,
-    secure: true,       // Render = HTTPS
+    secure: true,       // Render HTTPS
     sameSite: "none",   // Netlify → Render
     maxAge: 1000 * 60 * 60
   }
@@ -68,17 +67,9 @@ const Appointment = mongoose.model("Appointment", new mongoose.Schema({
   date: String
 }));
 
-const Prescription = mongoose.model("Prescription", new mongoose.Schema({
-  patientName: String,
-  doctor: String,
-  medicines: String,
-  date: String
-}));
-
 /* ============ SEED USERS (RUN ONCE) ============ */
 async function seedUsers() {
-  const count = await User.countDocuments();
-  if (count > 0) return;
+  if (await User.countDocuments() > 0) return;
 
   const users = [
     { username: "admin", password: "admin", role: "admin" },
@@ -88,7 +79,7 @@ async function seedUsers() {
     { username: "drsharma", password: "doctor", role: "doctor" }
   ];
 
-  for (let u of users) {
+  for (const u of users) {
     const hash = await bcrypt.hash(u.password, 10);
     await User.create({ ...u, password: hash });
   }
