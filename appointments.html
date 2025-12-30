@@ -8,7 +8,7 @@
 </head>
 <body>
 
-<!-- GLOBAL NAVBAR -->
+<!-- ================= NAVBAR ================= -->
 <nav>
   <h2>🏥 SmartCare</h2>
   <div style="display:flex;gap:18px;align-items:center;">
@@ -20,15 +20,11 @@
   </div>
 </nav>
 
-<!-- APPOINTMENTS PAGE -->
+<!-- ================= APPOINTMENTS ================= -->
 <section class="section">
-  <div style="
-    display:grid;
-    grid-template-columns:1.1fr 0.9fr;
-    gap:40px;
-  ">
+  <div style="display:grid;grid-template-columns:1.1fr 0.9fr;gap:40px;">
 
-    <!-- LEFT: BOOKING FORM -->
+    <!-- ===== LEFT: BOOKING FORM ===== -->
     <div class="light" style="padding:30px;border-radius:18px;">
       <h2>🗓️ Book Appointment</h2>
       <p style="color:gray;font-size:14px;">
@@ -38,7 +34,7 @@
       <input id="aptPatient" placeholder="Patient Name" required>
 
       <select id="aptDoctor" required>
-        <!-- doctors injected via JS -->
+        <option value="">Loading doctors...</option>
       </select>
 
       <input type="date" id="aptDate" required>
@@ -46,7 +42,7 @@
       <button onclick="addAppointment()">Book Appointment</button>
     </div>
 
-    <!-- RIGHT: INFORMATION PANEL -->
+    <!-- ===== RIGHT: INFO PANEL ===== -->
     <div class="card">
       <h3>ℹ️ Appointment Information</h3>
 
@@ -85,10 +81,11 @@
   </div>
 </section>
 
+<!-- ================= SCRIPTS ================= -->
 <script src="script.js"></script>
 
 <script>
-  /* prevent booking past dates */
+  // Prevent booking past dates
   const today = new Date().toISOString().split("T")[0];
   document.getElementById("aptDate").min = today;
 </script>

@@ -15,7 +15,8 @@
   <div class="login-card">
     <h2>Doctor / Admin Login</h2>
 
-    <input type="email" id="email" placeholder="Email" />
+    <!-- ✅ USERNAME (not email) -->
+    <input type="text" id="username" placeholder="Username" />
     <input type="password" id="password" placeholder="Password" />
 
     <button onclick="login()">Login</button>
@@ -25,36 +26,49 @@
 </div>
 
 <script>
+const API = "https://smartcare-hospital.onrender.com";
+
 async function login() {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+  const username = document.getElementById("username").value.trim().toLowerCase();
+  const password = document.getElementById("password").value.trim();
   const msg = document.getElementById("msg");
 
+  if (!username || !password) {
+    msg.style.color = "red";
+    msg.innerText = "Enter username and password";
+    return;
+  }
+
+  msg.style.color = "black";
   msg.innerText = "Logging in...";
 
   try {
-    const res = await fetch("https://smartcare-hospital.onrender.com/login", {
+    const res = await fetch(`${API}/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password })
+      credentials: "include",   // ✅ VERY IMPORTANT
+      body: JSON.stringify({ username, password })
     });
 
     const data = await res.json();
 
     if (!res.ok) {
       msg.style.color = "red";
-      msg.innerText = data.message;
+      msg.innerText = data.message || "Login failed";
       return;
     }
-
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("role", data.role);
 
     msg.style.color = "green";
     msg.innerText = "Login successful";
 
-    window.location.href =
-      data.role === "admin" ? "admin.html" : "doctors.html";
+    // ✅ Redirect based on role
+    setTimeout(() => {
+      if (data.role === "admin") {
+        window.location.href = "admin.html";
+      } else if (data.role === "doctor") {
+        window.location.href = "doctors.html";
+      }
+    }, 500);
 
   } catch {
     msg.style.color = "red";

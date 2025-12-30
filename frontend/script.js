@@ -8,7 +8,8 @@ function $(id) {
   return document.getElementById(id);
 }
 
-const API = "https://smartcare-hospital.onrender.com/";
+/* ✅ NO TRAILING SLASH */
+const API = "https://smartcare-hospital.onrender.com";
 
 /* ========= DOCTOR DATA ========= */
 const doctors = [
@@ -17,8 +18,6 @@ const doctors = [
   { username: "drkumar", name: "Dr. K. Kumar", speciality: "Orthopedic" },
   { username: "drsharma", name: "Dr. P. Sharma", speciality: "Cardiologist" }
 ];
-
-let loggedDoctor = null;
 
 /* ========= DOM READY ========= */
 document.addEventListener("DOMContentLoaded", () => {
@@ -32,6 +31,11 @@ document.addEventListener("DOMContentLoaded", () => {
       o.textContent = `${d.name} (${d.speciality})`;
       $("aptDoctor").appendChild(o);
     });
+  }
+
+  /* Auto-load doctor dashboard if session exists */
+  if ($("doctorDashboard")) {
+    loadDoctorAppointments();
   }
 });
 
@@ -49,15 +53,19 @@ function addAppointment() {
   fetch(`${API}/appointments`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify({ patientName, doctor, date })
   })
-    .then(res => res.json())
+    .then(res => {
+      if (!res.ok) throw new Error();
+      return res.json();
+    })
     .then(() => {
       alert("Appointment booked successfully");
       $("aptPatient").value = "";
       $("aptDate").value = "";
     })
-    .catch(() => alert("Failed to book appointment"));
+    .catch(() => alert("Server error while booking appointment"));
 }
 
 /* ========= DOCTOR LOGIN ========= */
@@ -76,10 +84,12 @@ function doctorLogin() {
     credentials: "include",
     body: JSON.stringify({ username, password })
   })
-    .then(res => res.json())
+    .then(res => {
+      if (!res.ok) throw new Error();
+      return res.json();
+    })
     .then(data => {
       if (data.role === "doctor") {
-        loggedDoctor = username;
         $("doctorLoginBox").style.display = "none";
         $("doctorDashboard").style.display = "block";
         loadDoctorAppointments();
@@ -88,33 +98,31 @@ function doctorLogin() {
       }
     })
     .catch(() => {
-      $("loginError").textContent = "Server error";
+      $("loginError").textContent = "Login failed";
     });
 }
 
 /* ========= LOAD DOCTOR APPOINTMENTS ========= */
 function loadDoctorAppointments() {
-  if (!loggedDoctor) return;
+  if (!$("doctorAppointmentCards")) return;
 
-  const doctorMap = {};
-  doctors.forEach(d => doctorMap[d.username] = d.name);
-
-  fetch(`${API}/appointments`, { credentials: "include" })
-    .then(res => res.json())
+  fetch(`${API}/appointments`, {
+    credentials: "include"
+  })
+    .then(res => {
+      if (!res.ok) throw new Error();
+      return res.json();
+    })
     .then(data => {
       const wrap = $("doctorAppointmentCards");
       wrap.innerHTML = "";
 
-      const myAppointments = data.filter(
-        a => a.doctor === doctorMap[loggedDoctor]
-      );
-
-      if (!myAppointments.length) {
+      if (!data.length) {
         wrap.innerHTML = "<p>No appointments yet</p>";
         return;
       }
 
-      myAppointments.forEach(a => {
+      data.forEach(a => {
         const card = document.createElement("div");
         card.className = "card";
         card.innerHTML = `
@@ -123,6 +131,10 @@ function loadDoctorAppointments() {
         `;
         wrap.appendChild(card);
       });
+    })
+    .catch(() => {
+      $("doctorAppointmentCards").innerHTML =
+        "<p>Please login to view appointments</p>";
     });
 }
 
@@ -132,7 +144,6 @@ function doctorLogout() {
     method: "POST",
     credentials: "include"
   }).then(() => {
-    loggedDoctor = null;
     location.reload();
   });
 }
