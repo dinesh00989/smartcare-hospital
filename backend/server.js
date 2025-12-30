@@ -11,9 +11,6 @@ const bcrypt = require("bcrypt");
 const cors = require("cors");
 const session = require("express-session");
 
-/* ✅ UNIVERSAL CONNECT-MONGO FIX */
-const MongoStore = require("connect-mongo")(session);
-
 const app = express();
 
 /* ============ MIDDLEWARE ============ */
@@ -36,20 +33,16 @@ mongoose.connect(process.env.MONGO_URI)
     process.exit(1);
   });
 
-/* ============ SESSION ============ */
+/* ============ SESSION (NO CONNECT-MONGO) ============ */
 app.use(session({
   name: "smartcare.sid",
   secret: "smartcare-secret",
   resave: false,
   saveUninitialized: false,
-  store: new MongoStore({
-    mongooseConnection: mongoose.connection,
-    collection: "sessions"
-  }),
   cookie: {
     httpOnly: true,
-    secure: true,       // Render HTTPS
-    sameSite: "none",   // Netlify → Render
+    secure: true,     // Render HTTPS
+    sameSite: "none", // Netlify → Render
     maxAge: 1000 * 60 * 60
   }
 }));
@@ -67,7 +60,7 @@ const Appointment = mongoose.model("Appointment", new mongoose.Schema({
   date: String
 }));
 
-/* ============ SEED USERS (RUN ONCE) ============ */
+/* ============ SEED USERS (ONCE) ============ */
 async function seedUsers() {
   if (await User.countDocuments() > 0) return;
 
