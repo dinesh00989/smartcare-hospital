@@ -15,38 +15,51 @@
     <a href="index.html">Home</a>
     <a href="appointments.html"><b>Appointments</b></a>
     <a href="doctors.html">Doctors</a>
-    <a href="prescription.html">Prescription</a>
+    <a href="admin-login.html">Admin</a>
   </div>
 </nav>
 
 <section class="section">
   <h2>📅 Book Appointment</h2>
 
-  <!-- ✅ FORM FIX (THIS IS THE KEY) -->
+  <!-- ✅ FORM-BASED APPROACH (RELIABLE) -->
   <form id="appointmentForm">
-    <input id="aptPatient" placeholder="Patient Name" required />
-    <input id="aptDate" type="date" required />
+
+    <input
+      id="aptPatient"
+      type="text"
+      placeholder="Patient Name"
+      required
+    />
+
+    <input
+      id="aptDate"
+      type="date"
+      required
+    />
 
     <select id="aptDoctor" required>
       <option value="">-- Select Doctor --</option>
-      <option value="Dr. A. Rao">Dr. A. Rao</option>
-      <option value="Dr. Meena S.">Dr. Meena S.</option>
-      <option value="Dr. K. Kumar">Dr. K. Kumar</option>
-      <option value="Dr. P. Sharma">Dr. P. Sharma</option>
+      <option value="Dr. A. Rao">Dr. A. Rao (General Physician)</option>
+      <option value="Dr. Meena S.">Dr. Meena S. (Pediatrician)</option>
+      <option value="Dr. K. Kumar">Dr. K. Kumar (Orthopedic)</option>
+      <option value="Dr. P. Sharma">Dr. P. Sharma (Cardiologist)</option>
     </select>
 
     <button type="submit" style="margin-top:20px;">
       Book Appointment
     </button>
+
   </form>
 </section>
 
-<!-- ✅ LOAD JS -->
+<!-- ✅ GLOBAL JS -->
 <script src="script.js"></script>
 
-<!-- ✅ FORCE EVENT BINDING -->
+<!-- ✅ FORCE FORM → FUNCTION -->
 <script>
-  document.getElementById("appointmentForm")
+  document
+    .getElementById("appointmentForm")
     .addEventListener("submit", function (e) {
       e.preventDefault();
       addAppointment();
