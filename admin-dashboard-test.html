@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Dashboard TEST</title>
+</head>
+<body>
+
+<h1>ADMIN DASHBOARD TEST – IF YOU SEE THIS, PAGE IS STABLE</h1>
+
+<p id="status">Loading…</p>
+
+<script>
+  const API = "https://smartcare-hospital.onrender.com";
+
+  fetch(`${API}/admin/appointments`)
+    .then(r => r.json())
+    .then(d => {
+      document.getElementById("status").textContent =
+        "Appointments count: " + d.length;
+    })
+    .catch(e => {
+      document.getElementById("status").textContent =
+        "Fetch failed: " + e;
+    });
+</script>
+
+</body>
+</html>
