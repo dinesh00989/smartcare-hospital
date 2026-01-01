@@ -1,40 +1,78 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
   <title>Admin Login | SmartCare</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link rel="stylesheet" href="style.css" />
 </head>
+
 <body class="center">
 
-<h2>🔐 Admin Login</h2>
+  <h2>🔐 Admin Login</h2>
 
-<input id="user" placeholder="Username">
-<input id="pass" type="password" placeholder="Password">
-<button onclick="login()">Login</button>
+  <input
+    id="adminUser"
+    type="text"
+    placeholder="Admin Username"
+    autocomplete="off"
+  />
 
-<p id="err" style="color:red"></p>
+  <input
+    id="adminPass"
+    type="password"
+    placeholder="Admin Password"
+  />
 
-<script>
-const API = "https://smartcare-hospital.onrender.com";
+  <button id="loginBtn">Login</button>
 
-function login() {
-  fetch(`${API}/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({
-      username: user.value,
-      password: pass.value
-    })
-  })
-  .then(r => r.ok ? r.json() : Promise.reject())
-  .then(d => {
-    if (d.role !== "admin") throw "";
-    location.href = "admin-dashboard.html";
-  })
-  .catch(() => err.textContent = "Invalid admin credentials");
-}
-</script>
+  <p id="errorMsg" style="color:red;margin-top:10px;"></p>
+
+  <!-- ================= SCRIPT ================= -->
+  <script>
+    (function () {
+      const API = "https://smartcare-hospital.onrender.com";
+
+      const btn = document.getElementById("loginBtn");
+      const user = document.getElementById("adminUser");
+      const pass = document.getElementById("adminPass");
+      const err  = document.getElementById("errorMsg");
+
+      btn.addEventListener("click", function () {
+        err.textContent = "";
+
+        if (!user.value || !pass.value) {
+          err.textContent = "Enter admin credentials";
+          return;
+        }
+
+        fetch(`${API}/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            username: user.value.trim(),
+            password: pass.value.trim()
+          })
+        })
+        .then(res => {
+          if (!res.ok) throw new Error("Login failed");
+          return res.json();
+        })
+        .then(data => {
+          if (data.role !== "admin") {
+            throw new Error("Not admin");
+          }
+          // ✅ SUCCESS
+          window.location.href = "admin-dashboard.html";
+        })
+        .catch(() => {
+          err.textContent = "Invalid admin username or password";
+        });
+      });
+    })();
+  </script>
 
 </body>
 </html>
