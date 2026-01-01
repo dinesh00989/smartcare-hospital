@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Appointments | SmartCare</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ================= NAVBAR ================= -->
+<nav>
+  <h2>🏥 SmartCare</h2>
+  <div style="display:flex;gap:18px;align-items:center;">
+    <a href="index.html">Home</a>
+    <a href="appointments.html"><b>Appointments</b></a>
+    <a href="doctors.html">Doctors</a>
+    <a href="prescription.html">Prescription</a>
+    <a href="admin.html">Admin</a>
+  </div>
+</nav>
+
+<!-- ================= APPOINTMENTS ================= -->
+<section class="section">
+  <div style="display:grid;grid-template-columns:1.1fr 0.9fr;gap:40px;">
+
+    <!-- ===== LEFT: BOOKING FORM ===== -->
+    <div class="light" style="padding:30px;border-radius:18px;">
+      <h2>🗓️ Book Appointment</h2>
+      <p style="color:gray;font-size:14px;">
+        Patients can book appointments without login.
+      </p>
+
+      <input id="aptPatient" placeholder="Patient Name" required>
+
+      <select id="aptDoctor" required>
+        <option value="">Loading doctors...</option>
+      </select>
+
+      <input type="date" id="aptDate" required>
+
+      <button onclick="addAppointment()">Book Appointment</button>
+    </div>
+
+    <!-- ===== RIGHT: INFO PANEL ===== -->
+    <div class="card">
+      <h3>ℹ️ Appointment Information</h3>
+
+      <p>
+        SmartCare helps you book hospital appointments quickly
+        without standing in long queues.
+      </p>
+
+      <hr>
+
+      <p><b>🕒 OPD Timings</b></p>
+      <ul>
+        <li>Morning: 9:00 AM – 1:00 PM</li>
+        <li>Evening: 4:00 PM – 8:00 PM</li>
+      </ul>
+
+      <p><b>📋 Booking Guidelines</b></p>
+      <ul>
+        <li>Select doctor and preferred date</li>
+        <li>Arrive 15 minutes early</li>
+        <li>Carry previous medical records</li>
+      </ul>
+
+      <p><b>👨‍⚕️ After Booking</b></p>
+      <ul>
+        <li>Doctor can view appointment instantly</li>
+        <li>Consultation happens as per schedule</li>
+        <li>Prescription provided digitally</li>
+      </ul>
+
+      <p style="margin-top:14px;color:#2563eb;">
+        ✔ Safe • ✔ Simple • ✔ Paperless
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================= SCRIPTS ================= -->
+<script src="script.js"></script>
+
+<script>
+  // Prevent booking past dates
+  const today = new Date().toISOString().split("T")[0];
+  document.getElementById("aptDate").min = today;
+</script>
+
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Doctors | SmartCare</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- GLOBAL NAVBAR -->
+<nav>
+  <h2>🏥 SmartCare</h2>
+  <div style="display:flex;gap:18px;align-items:center;">
+    <a href="index.html">Home</a>
+    <a href="appointments.html">Appointments</a>
+    <a href="doctors.html"><b>Doctors</b></a>
+    <a href="prescription.html">Prescription</a>
+    <a href="admin.html">Admin</a>
+  </div>
+</nav>
+
+<!-- DOCTOR LIST -->
+<section class="section">
+  <h2>👨‍⚕️ Our Doctors</h2>
+  <input id="doctorSearch" placeholder="Search by name or specialization">
+  <ul id="doctorList" class="doctor-list"></ul>
+</section>
+
+<!-- DOCTOR LOGIN -->
+<section class="section light" id="doctorLoginBox">
+  <h3>🔐 Doctor Login</h3>
+  <p style="color:gray;font-size:14px;">
+    Login to view your appointments.
+  </p>
+
+  <input id="docUser" placeholder="Username (ex: drrao)">
+  <input id="docPass" type="password" placeholder="Password">
+  <button onclick="doctorLogin()">Login</button>
+
+  <p id="loginError" style="color:red;"></p>
+</section>
+
+<!-- DOCTOR DASHBOARD -->
+<section class="section" id="doctorDashboard" style="display:none;">
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <h3>📋 My Appointments</h3>
+    <button onclick="doctorLogout()" class="btn-danger">Logout</button>
+  </div>
+
+  <div id="doctorAppointmentCards" class="card-grid"></div>
+</section>
+
+<!-- RIGHT PANEL (PROFILE) -->
+<div class="doctor-panel" id="doctorPanel">
+  <button class="close-btn" onclick="closeDoctorPanel()">×</button>
+
+  <div class="panel-content">
+    <img id="panelPhoto" class="panel-photo">
+    <h3 id="panelName"></h3>
+    <p id="panelSpec"></p>
+
+    <span id="panelStatus" class="status-badge"></span>
+
+    <p><b>Experience:</b> <span id="panelExp"></span></p>
+    <p><b>Qualification:</b> <span id="panelQual"></span></p>
+    <p><b>Languages:</b> <span id="panelLang"></span></p>
+
+    <h4>Expertise</h4>
+    <ul id="panelExpertise"></ul>
+
+    <h4>Career Highlights</h4>
+    <ul id="panelStats"></ul>
+  </div>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
