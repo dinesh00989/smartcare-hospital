@@ -1,6 +1,7 @@
 /****************************************
  SMARTCARE – FINAL BACKEND SERVER
- Render + Netlify • Stable • Exam Safe
+ GitHub Pages + Render + MongoDB Atlas
+ Stable • Exam Safe • DB Verified
 *****************************************/
 
 require("dotenv").config();
@@ -20,20 +21,20 @@ app.use(cors({
   origin: [
     "http://localhost:5500",
     "http://127.0.0.1:5500",
-    "https://smartcare-hospital.netlify.app"
+    "https://dinesh00989.github.io"   // ✅ IMPORTANT FIX
   ],
   credentials: true
 }));
 
 /* ============ DATABASE ============ */
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB Connected"))
+  .then(() => console.log("✅ MongoDB Atlas Connected"))
   .catch(err => {
     console.error("❌ MongoDB Error", err);
     process.exit(1);
   });
 
-/* ============ SESSION (NO CONNECT-MONGO) ============ */
+/* ============ SESSION ============ */
 app.use(session({
   name: "smartcare.sid",
   secret: "smartcare-secret",
@@ -41,8 +42,8 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: true,     // Render HTTPS
-    sameSite: "none", // Netlify → Render
+    secure: true,      // HTTPS on Render
+    sameSite: "none",  // Cross-site cookie
     maxAge: 1000 * 60 * 60
   }
 }));
@@ -57,6 +58,15 @@ const User = mongoose.model("User", new mongoose.Schema({
 const Appointment = mongoose.model("Appointment", new mongoose.Schema({
   patientName: String,
   doctor: String,
+  date: String
+}));
+
+const Prescription = mongoose.model("Prescription", new mongoose.Schema({
+  patientName: String,
+  doctor: String,
+  diagnosis: String,
+  medicines: String,
+  notes: String,
   date: String
 }));
 
@@ -77,7 +87,7 @@ async function seedUsers() {
     await User.create({ ...u, password: hash });
   }
 
-  console.log("👥 Default users created");
+  console.log("👥 Default users seeded");
 }
 seedUsers();
 
@@ -116,6 +126,7 @@ app.post("/login", async (req, res) => {
     role: user.role
   };
 
+  console.log("✅ Login:", username);
   res.json({ role: user.role });
 });
 
@@ -128,8 +139,9 @@ app.post("/logout", (req, res) => {
 
 /* ============ APPOINTMENTS ============ */
 app.post("/appointments", async (req, res) => {
-  await Appointment.create(req.body);
-  res.json({ message: "Appointment saved" });
+  const saved = await Appointment.create(req.body);
+  console.log("📌 Appointment saved:", saved);
+  res.json(saved);
 });
 
 app.get("/appointments", isLoggedIn, requireRole("doctor"), async (req, res) => {
@@ -144,6 +156,13 @@ app.get("/appointments", isLoggedIn, requireRole("doctor"), async (req, res) => 
   const data = await Appointment.find({ doctor });
 
   res.json(data);
+});
+
+/* ============ PRESCRIPTIONS ============ */
+app.post("/prescriptions", async (req, res) => {
+  const saved = await Prescription.create(req.body);
+  console.log("📄 Prescription saved:", saved);
+  res.json(saved);
 });
 
 /* ============ START SERVER ============ */
