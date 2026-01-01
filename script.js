@@ -1,26 +1,18 @@
 /*************************************************
- SMARTCARE – FINAL BACKEND CONNECTED SCRIPT
- Appointments | Doctor Login | Dashboard
+ SMARTCARE – FINAL BACKEND-ONLY SCRIPT
+ ONE SOURCE OF TRUTH: MONGODB ATLAS
 **************************************************/
 
-/* ========= UTIL ========= */
-function $(id) {
-  return document.getElementById(id);
-}
-
-/* ========= BACKEND URL ========= */
 const API = "https://smartcare-hospital.onrender.com";
 
-/* =====================================================
-   APPOINTMENTS (BACKEND + ATLAS)
-===================================================== */
+/* ================= APPOINTMENTS ================= */
 function addAppointment() {
-  const patientName = $("aptPatient").value.trim();
-  const doctor = $("aptDoctor").value;
-  const date = $("aptDate").value;
+  const patientName = document.getElementById("aptPatient")?.value.trim();
+  const doctor = document.getElementById("aptDoctor")?.value;
+  const date = document.getElementById("aptDate")?.value;
 
   if (!patientName || !doctor || !date) {
-    alert("Please fill all fields");
+    alert("Fill all fields");
     return;
   }
 
@@ -30,24 +22,18 @@ function addAppointment() {
     body: JSON.stringify({ patientName, doctor, date })
   })
     .then(res => res.json())
-    .then(data => {
-      alert("✅ Appointment saved in database");
-      $("aptPatient").value = "";
-      $("aptDate").value = "";
-      console.log("Saved:", data);
+    .then(() => {
+      alert("✅ Appointment saved to database");
+      document.getElementById("aptPatient").value = "";
+      document.getElementById("aptDate").value = "";
     })
-    .catch(err => {
-      console.error(err);
-      alert("❌ Failed to save appointment");
-    });
+    .catch(() => alert("❌ Backend error"));
 }
 
-/* =====================================================
-   DOCTOR LOGIN (BACKEND SESSION)
-===================================================== */
+/* ================= DOCTOR LOGIN ================= */
 function doctorLogin() {
-  const username = $("docUser").value.trim().toLowerCase();
-  const password = $("docPass").value.trim();
+  const username = document.getElementById("docUser").value.trim().toLowerCase();
+  const password = document.getElementById("docPass").value.trim();
 
   fetch(`${API}/login`, {
     method: "POST",
@@ -56,56 +42,44 @@ function doctorLogin() {
     body: JSON.stringify({ username, password })
   })
     .then(res => {
-      if (!res.ok) throw new Error("Login failed");
-      return res.json();
-    })
-    .then(() => {
-      location.href = "prescription.html";
-    })
-    .catch(() => {
-      $("loginError").textContent = "Invalid credentials";
-    });
-}
-
-/* =====================================================
-   LOAD DOCTOR APPOINTMENTS (BACKEND)
-===================================================== */
-function loadDoctorAppointments() {
-  fetch(`${API}/appointments`, {
-    credentials: "include"
-  })
-    .then(res => {
       if (!res.ok) throw new Error();
       return res.json();
     })
-    .then(data => {
-      const wrap = $("doctorAppointmentCards");
-      wrap.innerHTML = "";
+    .then(() => {
+      window.location.href = "prescription.html";
+    })
+    .catch(() => {
+      document.getElementById("loginError").textContent = "Invalid credentials";
+    });
+}
 
+/* ================= LOAD APPOINTMENTS ================= */
+function loadDoctorAppointments() {
+  fetch(`${API}/appointments`, { credentials: "include" })
+    .then(res => res.json())
+    .then(data => {
+      const wrap = document.getElementById("doctorAppointmentCards");
+      if (!wrap) return;
+
+      wrap.innerHTML = "";
       if (!data.length) {
-        wrap.innerHTML = "<p>No appointments yet</p>";
+        wrap.innerHTML = "<p>No appointments</p>";
         return;
       }
 
       data.forEach(a => {
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `
-          <b>Patient:</b> ${a.patientName}<br>
-          <b>Date:</b> ${a.date}
-        `;
-        wrap.appendChild(card);
+        const d = document.createElement("div");
+        d.className = "card";
+        d.innerHTML = `<b>${a.patientName}</b><br>${a.date}`;
+        wrap.appendChild(d);
       });
-    })
-    .catch(() => {});
+    });
 }
 
-/* =====================================================
-   LOGOUT
-===================================================== */
+/* ================= LOGOUT ================= */
 function doctorLogout() {
   fetch(`${API}/logout`, {
     method: "POST",
     credentials: "include"
-  }).then(() => location.href = "index.html");
+  }).then(() => window.location.href = "index.html");
 }
