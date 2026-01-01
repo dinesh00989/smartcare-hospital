@@ -1,6 +1,6 @@
 /*************************************************
  SMARTCARE – FINAL FULL STACK SCRIPT
- Stable • Demo Ready • Exam Safe • Production Safe
+ Backend-Enforced • DB Verified • Exam Safe
 **************************************************/
 
 /* ========= UTIL ========= */
@@ -9,7 +9,6 @@ function $(id) {
 }
 
 /* ========= BACKEND BASE URL ========= */
-/* ❌ NO TRAILING SLASH */
 const API = "https://smartcare-hospital.onrender.com";
 
 /* ========= DOCTOR MASTER DATA ========= */
@@ -29,8 +28,6 @@ const doctorMap = {
 
 /* ========= DOM READY ========= */
 document.addEventListener("DOMContentLoaded", () => {
-
-  /* Populate doctor dropdown (appointments page) */
   if ($("aptDoctor")) {
     $("aptDoctor").innerHTML = `<option value="">-- Select Doctor --</option>`;
     doctors.forEach(d => {
@@ -41,14 +38,13 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  /* Load doctor appointments only if dashboard exists */
   if ($("doctorAppointmentCards")) {
     loadDoctorAppointments();
   }
 });
 
 /* =====================================================
-   APPOINTMENTS – PUBLIC (NO LOGIN REQUIRED)
+   APPOINTMENTS – ALWAYS BACKEND + DB
 ===================================================== */
 function addAppointment() {
   const patientName = $("aptPatient")?.value.trim();
@@ -63,24 +59,27 @@ function addAppointment() {
   fetch(`${API}/appointments`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify({ patientName, doctor, date })
   })
     .then(res => {
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error("Backend rejected appointment");
       return res.json();
     })
-    .then(() => {
-      alert("✅ Appointment booked successfully");
+    .then(data => {
+      console.log("✅ Appointment saved in DB:", data);
+      alert("✅ Appointment booked and stored in database");
       $("aptPatient").value = "";
       $("aptDate").value = "";
     })
-    .catch(() => {
-      alert("❌ Server error while booking appointment");
+    .catch(err => {
+      console.error("❌ Appointment error:", err);
+      alert("❌ Backend error. Appointment NOT saved.");
     });
 }
 
 /* =====================================================
-   DOCTOR LOGIN (USED BY DOCTOR + PRESCRIPTION)
+   DOCTOR LOGIN
 ===================================================== */
 function doctorLogin() {
   const username = $("docUser").value.trim().toLowerCase();
@@ -98,7 +97,7 @@ function doctorLogin() {
     body: JSON.stringify({ username, password })
   })
     .then(res => {
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error("Login failed");
       return res.json();
     })
     .then(data => {
@@ -107,15 +106,11 @@ function doctorLogin() {
         return;
       }
 
-      /* Hide login, show dashboard/prescription */
       if ($("doctorLoginBox")) $("doctorLoginBox").style.display = "none";
       if ($("doctorDashboard")) $("doctorDashboard").style.display = "block";
       if ($("prescriptionBox")) $("prescriptionBox").style.display = "flex";
 
-      /* Auto-fill doctor name in prescription */
-      if ($("pDoctor")) {
-        $("pDoctor").value = doctorMap[username];
-      }
+      if ($("pDoctor")) $("pDoctor").value = doctorMap[username];
 
       loadDoctorAppointments();
     })
@@ -125,20 +120,14 @@ function doctorLogin() {
 }
 
 /* =====================================================
-   LOAD DOCTOR APPOINTMENTS (PROTECTED)
+   LOAD DOCTOR APPOINTMENTS (FROM DB)
 ===================================================== */
 function loadDoctorAppointments() {
   if (!$("doctorAppointmentCards")) return;
 
-  fetch(`${API}/appointments`, {
-    credentials: "include"
-  })
+  fetch(`${API}/appointments`, { credentials: "include" })
     .then(res => {
-      if (res.status === 401) {
-        $("doctorAppointmentCards").innerHTML =
-          "<p>Please login to view appointments</p>";
-        throw new Error();
-      }
+      if (!res.ok) throw new Error("Not authorized");
       return res.json();
     })
     .then(data => {
@@ -146,7 +135,7 @@ function loadDoctorAppointments() {
       wrap.innerHTML = "";
 
       if (!data.length) {
-        wrap.innerHTML = "<p>No appointments yet</p>";
+        wrap.innerHTML = "<p>No appointments in database</p>";
         return;
       }
 
@@ -160,55 +149,15 @@ function loadDoctorAppointments() {
         wrap.appendChild(card);
       });
     })
-    .catch(() => {});
+    .catch(err => {
+      console.error("❌ Load appointments failed:", err);
+    });
 }
 
 /* =====================================================
-   PRESCRIPTION LOGIC
+   SAVE PRESCRIPTION – ALWAYS DB
 ===================================================== */
-function applyTemplate(t) {
-  if (t === "fever") {
-    pDiagnosis.value = "Fever";
-    pMedicines.value = "Paracetamol 650mg – twice daily";
-    pNotes.value = "Drink fluids & take rest";
-  }
-  if (t === "cold") {
-    pDiagnosis.value = "Cold & Cough";
-    pMedicines.value = "Cetirizine, Cough syrup";
-    pNotes.value = "Avoid cold items";
-  }
-  if (t === "gastric") {
-    pDiagnosis.value = "Gastric Issue";
-    pMedicines.value = "Omeprazole";
-    pNotes.value = "Avoid spicy food";
-  }
-  if (t === "bp") {
-    pDiagnosis.value = "Blood Pressure";
-    pMedicines.value = "Amlodipine";
-    pNotes.value = "Monitor BP regularly";
-  }
-  updatePreview();
-}
-
-function updatePreview() {
-  if (!$("previewBox")) return;
-
-  previewBox.innerHTML = `
-    <div class="rx">℞</div>
-    <p><b>Patient:</b> ${pPatient.value || "—"}</p>
-    <p><b>Doctor:</b> ${pDoctor.value || "—"}</p>
-    <p><b>Diagnosis:</b> ${pDiagnosis.value || "—"}</p>
-    <p><b>Medicines:</b><br>${pMedicines.value || "—"}</p>
-    <p><b>Advice:</b><br>${pNotes.value || "—"}</p>
-  `;
-}
-
 function savePrescription() {
-  if (!pPatient.value || !pDoctor.value || !pDiagnosis.value || !pMedicines.value) {
-    alert("Fill all required fields");
-    return;
-  }
-
   fetch(`${API}/prescriptions`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -223,15 +172,14 @@ function savePrescription() {
     })
   })
     .then(res => {
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error("Prescription failed");
       return res.json();
     })
-    .then(() => {
-      alert("✅ Prescription saved successfully");
-      document.querySelectorAll("input, textarea").forEach(i => i.value = "");
-      updatePreview();
+    .then(data => {
+      console.log("✅ Prescription saved:", data);
+      alert("✅ Prescription stored in database");
     })
-    .catch(() => alert("❌ Failed to save prescription"));
+    .catch(() => alert("❌ Prescription not saved"));
 }
 
 /* =====================================================
@@ -241,7 +189,5 @@ function doctorLogout() {
   fetch(`${API}/logout`, {
     method: "POST",
     credentials: "include"
-  }).then(() => {
-    location.reload();
-  });
+  }).then(() => location.reload());
 }
