@@ -1,7 +1,6 @@
 /****************************************
  SMARTCARE – FINAL BACKEND SERVER
- GitHub Pages + Render + MongoDB Atlas
- Stable • Exam Safe • DB Verified
+ Atlas DB Forced • Render Safe • Exam Safe
 *****************************************/
 
 require("dotenv").config();
@@ -21,18 +20,22 @@ app.use(cors({
   origin: [
     "http://localhost:5500",
     "http://127.0.0.1:5500",
-    "https://dinesh00989.github.io"   // ✅ IMPORTANT FIX
+    "https://dinesh00989.github.io"
   ],
   credentials: true
 }));
 
-/* ============ DATABASE ============ */
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB Atlas Connected"))
-  .catch(err => {
-    console.error("❌ MongoDB Error", err);
-    process.exit(1);
-  });
+/* ============ DATABASE (FORCE DB NAME) ============ */
+mongoose.connect(process.env.MONGO_URI, {
+  dbName: "smartcare"   // 🔥 FORCE DB
+})
+.then(() => {
+  console.log("✅ MongoDB Atlas connected to DB: smartcare");
+})
+.catch(err => {
+  console.error("❌ MongoDB connection error:", err);
+  process.exit(1);
+});
 
 /* ============ SESSION ============ */
 app.use(session({
@@ -42,8 +45,8 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: true,      // HTTPS on Render
-    sameSite: "none",  // Cross-site cookie
+    secure: true,
+    sameSite: "none",
     maxAge: 1000 * 60 * 60
   }
 }));
@@ -137,10 +140,13 @@ app.post("/logout", (req, res) => {
   });
 });
 
-/* ============ APPOINTMENTS ============ */
+/* ============ APPOINTMENTS (DB PROOF) ============ */
 app.post("/appointments", async (req, res) => {
+  console.log("📥 Incoming appointment:", req.body);
+
   const saved = await Appointment.create(req.body);
-  console.log("📌 Appointment saved:", saved);
+
+  console.log("✅ Appointment stored in Atlas:", saved._id);
   res.json(saved);
 });
 
@@ -161,7 +167,7 @@ app.get("/appointments", isLoggedIn, requireRole("doctor"), async (req, res) => 
 /* ============ PRESCRIPTIONS ============ */
 app.post("/prescriptions", async (req, res) => {
   const saved = await Prescription.create(req.body);
-  console.log("📄 Prescription saved:", saved);
+  console.log("📄 Prescription saved:", saved._id);
   res.json(saved);
 });
 
