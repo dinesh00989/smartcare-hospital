@@ -8,7 +8,6 @@
 
 <nav>
   <h2>🏥 SmartCare Admin</h2>
-  <button onclick="logout()">Logout</button>
 </nav>
 
 <section class="section">
@@ -19,11 +18,18 @@
 <script>
 const API = "https://smartcare-hospital.onrender.com";
 
-function load() {
-  fetch(`${API}/admin/appointments`, { credentials: "include" })
-    .then(r => r.ok ? r.json() : Promise.reject())
+function loadAppointments() {
+  fetch(`${API}/admin/appointments`)
+    .then(res => res.json())
     .then(data => {
+      const list = document.getElementById("list");
       list.innerHTML = "";
+
+      if (!data.length) {
+        list.innerHTML = "<p>No appointments found</p>";
+        return;
+      }
+
       data.forEach(a => {
         const d = document.createElement("div");
         d.className = "card";
@@ -34,25 +40,16 @@ function load() {
         `;
         list.appendChild(d);
       });
-    })
-    .catch(() => location.href = "admin-login.html");
+    });
 }
 
 function del(id) {
   fetch(`${API}/admin/appointments/${id}`, {
-    method: "DELETE",
-    credentials: "include"
-  }).then(load);
+    method: "DELETE"
+  }).then(loadAppointments);
 }
 
-function logout() {
-  fetch(`${API}/logout`, {
-    method: "POST",
-    credentials: "include"
-  }).then(() => location.href = "index.html");
-}
-
-load();
+loadAppointments();
 </script>
 
 </body>
