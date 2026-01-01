@@ -1,85 +1,153 @@
-/*************************************************
- SMARTCARE – FINAL BACKEND-ONLY SCRIPT
- ONE SOURCE OF TRUTH: MONGODB ATLAS
-**************************************************/
+/****************************************
+ SMARTCARE – FINAL BACKEND SERVER
+ Admin + Doctor + Appointments (CRUD)
+*****************************************/
 
-const API = "https://smartcare-hospital.onrender.com";
+require("dotenv").config();
+const express = require("express");
+const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
+const cors = require("cors");
+const session = require("express-session");
 
-/* ================= APPOINTMENTS ================= */
-function addAppointment() {
-  const patientName = document.getElementById("aptPatient")?.value.trim();
-  const doctor = document.getElementById("aptDoctor")?.value;
-  const date = document.getElementById("aptDate")?.value;
+const app = express();
 
-  if (!patientName || !doctor || !date) {
-    alert("Fill all fields");
-    return;
+/* ========= MIDDLEWARE ========= */
+app.use(express.json());
+
+app.use(cors({
+  origin: "https://dinesh00989.github.io",
+  credentials: true
+}));
+
+/* ========= DATABASE ========= */
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch(err => {
+    console.error("❌ MongoDB Error", err);
+    process.exit(1);
+  });
+
+/* ========= SESSION ========= */
+app.use(session({
+  name: "smartcare.sid",
+  secret: "smartcare-secret",
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none",
+    maxAge: 1000 * 60 * 60
+  }
+}));
+
+/* ========= MODELS ========= */
+const User = mongoose.model("User", new mongoose.Schema({
+  username: String,
+  password: String,
+  role: String
+}));
+
+const Appointment = mongoose.model("Appointment", new mongoose.Schema({
+  patientName: String,
+  doctor: String,
+  date: String
+}));
+
+/* ========= SEED USERS ========= */
+(async function seedUsers() {
+  if (await User.countDocuments()) return;
+
+  const users = [
+    { username: "admin", password: "admin", role: "admin" },
+    { username: "drrao", password: "doctor", role: "doctor" },
+    { username: "drmeena", password: "doctor", role: "doctor" },
+    { username: "drkumar", password: "doctor", role: "doctor" },
+    { username: "drsharma", password: "doctor", role: "doctor" }
+  ];
+
+  for (const u of users) {
+    const hash = await bcrypt.hash(u.password, 10);
+    await User.create({ ...u, password: hash });
   }
 
-  fetch(`${API}/appointments`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ patientName, doctor, date })
-  })
-    .then(res => res.json())
-    .then(() => {
-      alert("✅ Appointment saved to database");
-      document.getElementById("aptPatient").value = "";
-      document.getElementById("aptDate").value = "";
-    })
-    .catch(() => alert("❌ Backend error"));
+  console.log("👥 Default users created");
+})();
+
+/* ========= AUTH HELPERS ========= */
+function isLoggedIn(req, res, next) {
+  if (!req.session.user) return res.status(401).json({ message: "Login required" });
+  next();
 }
 
-/* ================= DOCTOR LOGIN ================= */
-function doctorLogin() {
-  const username = document.getElementById("docUser").value.trim().toLowerCase();
-  const password = document.getElementById("docPass").value.trim();
-
-  fetch(`${API}/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ username, password })
-  })
-    .then(res => {
-      if (!res.ok) throw new Error();
-      return res.json();
-    })
-    .then(() => {
-      window.location.href = "prescription.html";
-    })
-    .catch(() => {
-      document.getElementById("loginError").textContent = "Invalid credentials";
-    });
+function requireRole(role) {
+  return (req, res, next) => {
+    if (req.session.user.role !== role)
+      return res.status(403).json({ message: "Access denied" });
+    next();
+  };
 }
 
-/* ================= LOAD APPOINTMENTS ================= */
-function loadDoctorAppointments() {
-  fetch(`${API}/appointments`, { credentials: "include" })
-    .then(res => res.json())
-    .then(data => {
-      const wrap = document.getElementById("doctorAppointmentCards");
-      if (!wrap) return;
+/* ========= ROUTES ========= */
+app.get("/", (_, res) => res.send("🚀 SmartCare Backend Running"));
 
-      wrap.innerHTML = "";
-      if (!data.length) {
-        wrap.innerHTML = "<p>No appointments</p>";
-        return;
-      }
+app.post("/login", async (req, res) => {
+  const { username, password } = req.body;
 
-      data.forEach(a => {
-        const d = document.createElement("div");
-        d.className = "card";
-        d.innerHTML = `<b>${a.patientName}</b><br>${a.date}`;
-        wrap.appendChild(d);
-      });
-    });
-}
+  const user = await User.findOne({ username });
+  if (!user) return res.status(401).json({});
 
-/* ================= LOGOUT ================= */
-function doctorLogout() {
-  fetch(`${API}/logout`, {
-    method: "POST",
-    credentials: "include"
-  }).then(() => window.location.href = "index.html");
-}
+  const ok = await bcrypt.compare(password, user.password);
+  if (!ok) return res.status(401).json({});
+
+  req.session.user = {
+    id: user._id,
+    username: user.username,
+    role: user.role
+  };
+
+  res.json({ role: user.role });
+});
+
+app.post("/logout", (req, res) => {
+  req.session.destroy(() => {
+    res.clearCookie("smartcare.sid");
+    res.json({ message: "Logged out" });
+  });
+});
+
+/* ========= APPOINTMENTS ========= */
+app.post("/appointments", async (req, res) => {
+  const data = await Appointment.create(req.body);
+  res.json(data);
+});
+
+/* Doctor view */
+app.get("/appointments", isLoggedIn, requireRole("doctor"), async (req, res) => {
+  const map = {
+    drrao: "Dr. A. Rao",
+    drmeena: "Dr. Meena S.",
+    drkumar: "Dr. K. Kumar",
+    drsharma: "Dr. P. Sharma"
+  };
+  const doctor = map[req.session.user.username];
+  const data = await Appointment.find({ doctor });
+  res.json(data);
+});
+
+/* Admin view */
+app.get("/admin/appointments", isLoggedIn, requireRole("admin"), async (_, res) => {
+  const data = await Appointment.find().sort({ _id: -1 });
+  res.json(data);
+});
+
+/* Admin delete */
+app.delete("/admin/appointments/:id", isLoggedIn, requireRole("admin"), async (req, res) => {
+  await Appointment.findByIdAndDelete(req.params.id);
+  res.json({ message: "Deleted" });
+});
+
+/* ========= START ========= */
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`🚀 Server running on ${PORT}`));

@@ -1,38 +1,40 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
   <title>Admin Login | SmartCare</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="center">
 
-<nav>
-  <h2>🏥 SmartCare</h2>
-  <div>
-    <a href="index.html">Home</a>
-    <a href="admin-login.html">Admin</a>
-  </div>
-</nav>
+<h2>🔐 Admin Login</h2>
 
-<div class="app-container">
-  <section class="form-card">
-    <h2>🔐 Admin Login</h2>
-    <p class="helper-text">
-      Authorized access only. Please login to continue.
-    </p>
+<input id="user" placeholder="Username">
+<input id="pass" type="password" placeholder="Password">
+<button onclick="login()">Login</button>
 
-    <label>Username</label>
-    <input id="adminUser" placeholder="Admin username">
+<p id="err" style="color:red"></p>
 
-    <label>Password</label>
-    <input id="adminPass" type="password" placeholder="Password">
+<script>
+const API = "https://smartcare-hospital.onrender.com";
 
-    <button onclick="adminLogin()">Login</button>
-    <p id="adminError" class="error-text"></p>
-  </section>
-</div>
+function login() {
+  fetch(`${API}/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({
+      username: user.value,
+      password: pass.value
+    })
+  })
+  .then(r => r.ok ? r.json() : Promise.reject())
+  .then(d => {
+    if (d.role !== "admin") throw "";
+    location.href = "admin-dashboard.html";
+  })
+  .catch(() => err.textContent = "Invalid admin credentials");
+}
+</script>
 
-<script src="script.js"></script>
 </body>
 </html>
