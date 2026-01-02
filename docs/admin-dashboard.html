@@ -8,93 +8,73 @@
 <body>
 
 <nav>
-  <h2>🏥 SmartCare – Admin</h2>
+  <h2>🏥 Admin Dashboard</h2>
   <button onclick="logout()">Logout</button>
 </nav>
 
 <section class="section">
 
-  <h2>📅 Appointments</h2>
-  <table border="1" width="100%" id="appointmentsTable">
-    <tr>
-      <th>Patient</th>
-      <th>Doctor</th>
-      <th>Date</th>
-      <th>Action</th>
-    </tr>
-  </table>
+<h3>Appointments</h3>
+<table border="1" width="100%" id="apt">
+<tr><th>Patient</th><th>Doctor</th><th>Date</th><th>Action</th></tr>
+</table>
 
-  <h2 style="margin-top:40px;">💊 Prescriptions</h2>
-  <table border="1" width="100%" id="prescriptionsTable">
-    <tr>
-      <th>Patient</th>
-      <th>Doctor</th>
-      <th>Diagnosis</th>
-      <th>Medicines</th>
-      <th>Date</th>
-      <th>Action</th>
-    </tr>
-  </table>
+<h3 style="margin-top:30px">Prescriptions</h3>
+<table border="1" width="100%" id="rx">
+<tr><th>Patient</th><th>Doctor</th><th>Diagnosis</th><th>Medicines</th><th>Date</th><th>Action</th></tr>
+</table>
 
 </section>
 
 <script>
 const API = "https://smartcare-hospital.onrender.com";
 
-// protect page
 if (localStorage.getItem("adminLoggedIn") !== "true") {
   location.href = "admin-login.html";
 }
 
-/* ========== LOAD DATA ========== */
+/* LOAD APPOINTMENTS */
 fetch(`${API}/admin/appointments`)
-  .then(r => r.json())
-  .then(data => {
-    const table = document.getElementById("appointmentsTable");
-    data.forEach(a => {
-      table.innerHTML += `
-        <tr>
-          <td>${a.patientName}</td>
-          <td>${a.doctor}</td>
-          <td>${a.date}</td>
-          <td>
-            <button onclick="deleteAppointment('${a._id}')">Delete</button>
-          </td>
-        </tr>`;
-    });
+.then(r => r.json())
+.then(d => {
+  d.forEach(a => {
+    apt.innerHTML += `
+    <tr>
+      <td>${a.patientName}</td>
+      <td>${a.doctor}</td>
+      <td>${a.date}</td>
+      <td><button onclick="delA('${a._id}')">Delete</button></td>
+    </tr>`;
   });
+});
 
+/* LOAD PRESCRIPTIONS */
 fetch(`${API}/admin/prescriptions`)
-  .then(r => r.json())
-  .then(data => {
-    const table = document.getElementById("prescriptionsTable");
-    data.forEach(p => {
-      table.innerHTML += `
-        <tr>
-          <td>${p.patientName}</td>
-          <td>${p.doctor}</td>
-          <td>${p.diagnosis}</td>
-          <td>${p.medicines}</td>
-          <td>${p.date}</td>
-          <td>
-            <button onclick="deletePrescription('${p._id}')">Delete</button>
-          </td>
-        </tr>`;
-    });
+.then(r => r.json())
+.then(d => {
+  d.forEach(p => {
+    rx.innerHTML += `
+    <tr>
+      <td>${p.patientName}</td>
+      <td>${p.doctor}</td>
+      <td>${p.diagnosis}</td>
+      <td>${p.medicines}</td>
+      <td>${p.date}</td>
+      <td><button onclick="delP('${p._id}')">Delete</button></td>
+    </tr>`;
   });
+});
 
-/* ========== DELETE ========== */
-function deleteAppointment(id) {
+function delA(id) {
   fetch(`${API}/admin/appointments/${id}`, { method: "DELETE" })
-    .then(() => location.reload());
+  .then(() => location.reload());
 }
 
-function deletePrescription(id) {
+function delP(id) {
   fetch(`${API}/admin/prescriptions/${id}`, { method: "DELETE" })
-    .then(() => location.reload());
+  .then(() => location.reload());
 }
 
-/* ========== LOGOUT ========== */
 function logout() {
   localStorage.removeItem("adminLoggedIn");
   location.href = "admin-login.html";
