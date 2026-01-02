@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Admin Dashboard | SmartCare</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
 </head>
 
@@ -16,56 +17,85 @@ if (localStorage.getItem("adminLoggedIn") !== "yes") {
 
 <nav>
   <h2>🏥 SmartCare – Admin</h2>
-  <button onclick="logout()">Logout</button>
+  <button class="btn-danger" onclick="logout()">Logout</button>
 </nav>
 
-<div class="container">
-  <h3>📋 All Hospital Appointments</h3>
-  <div id="records"></div>
+<div class="section">
+  <h3>📅 Appointments</h3>
+  <div id="appointments"></div>
+
+  <h3 style="margin-top:40px;">💊 Prescriptions</h3>
+  <div id="prescriptions"></div>
+
+  <h3 style="margin-top:40px;">👨‍⚕️ Doctors</h3>
+  <div id="doctors"></div>
 </div>
 
 <script>
 const API = "https://smartcare-hospital.onrender.com";
 
-function loadData() {
-  fetch(`${API}/appointments`)
-    .then(res => res.json())
-    .then(data => {
-      records.innerHTML = "";
-
-      if (!data.length) {
-        records.innerHTML = "<p>No records found</p>";
-        return;
-      }
-
-      data.forEach(a => {
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `
-          <b>Patient:</b> ${a.patientName}<br>
-          <b>Doctor:</b> ${a.doctor}<br>
-          <b>Date:</b> ${a.date}<br><br>
-          <button class="danger" onclick="del('${a._id}')">Delete</button>
-        `;
-        records.appendChild(card);
-      });
-    });
-}
-
-function del(id) {
-  if (!confirm("Delete this record?")) return;
-
-  fetch(`${API}/appointments/${id}`, {
-    method: "DELETE"
-  }).then(loadData);
-}
-
+/* LOGOUT */
 function logout() {
   localStorage.removeItem("adminLoggedIn");
   location.href = "admin-login.html";
 }
 
-loadData();
+/* LOAD APPOINTMENTS */
+fetch(`${API}/appointments`)
+  .then(r => r.json())
+  .then(data => {
+    appointments.innerHTML = data.length
+      ? data.map(a => `
+        <div class="card">
+          <b>${a.patientName}</b><br>
+          ${a.doctor} – ${a.date}<br><br>
+          <button class="btn-danger" onclick="delAppointment('${a._id}')">Delete</button>
+        </div>
+      `).join("")
+      : "<p>No appointments</p>";
+  });
+
+function delAppointment(id) {
+  if (!confirm("Delete appointment?")) return;
+  fetch(`${API}/appointments/${id}`, { method: "DELETE" })
+    .then(() => location.reload());
+}
+
+/* LOAD PRESCRIPTIONS */
+fetch(`${API}/prescriptions`)
+  .then(r => r.json())
+  .then(data => {
+    prescriptions.innerHTML = data.length
+      ? data.map(p => `
+        <div class="card">
+          <b>${p.patientName}</b><br>
+          ${p.diagnosis}<br>
+          ${p.medicines}<br><br>
+          <button class="btn-danger" onclick="delPrescription('${p._id}')">Delete</button>
+        </div>
+      `).join("")
+      : "<p>No prescriptions</p>";
+  });
+
+function delPrescription(id) {
+  if (!confirm("Delete prescription?")) return;
+  fetch(`${API}/prescriptions/${id}`, { method: "DELETE" })
+    .then(() => location.reload());
+}
+
+/* LOAD DOCTORS */
+fetch(`${API}/doctors`)
+  .then(r => r.json())
+  .then(data => {
+    doctors.innerHTML = data.length
+      ? data.map(d => `
+        <div class="card">
+          <b>${d.username}</b><br>
+          Role: ${d.role}
+        </div>
+      `).join("")
+      : "<p>No doctors</p>";
+  });
 </script>
 
 </body>

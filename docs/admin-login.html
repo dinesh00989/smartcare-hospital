@@ -12,43 +12,25 @@
   <form id="adminLoginForm" class="login-card">
     <h2>🔐 Admin Login</h2>
 
-    <input
-      type="text"
-      id="adminUser"
-      placeholder="Admin ID"
-      required
-    />
-
-    <input
-      type="password"
-      id="adminPass"
-      placeholder="Password"
-      required
-    />
+    <input type="text" id="adminUser" placeholder="Admin ID" required />
+    <input type="password" id="adminPass" placeholder="Password" required />
 
     <button type="submit">Login</button>
-
     <p id="error" class="error"></p>
-
-    <p class="hint">
-      ID: <b>admin</b><br>
-      Password: <b>admin</b>
-    </p>
   </form>
 
 <script>
-document.getElementById("adminLoginForm").addEventListener("submit", function (e) {
+document.getElementById("adminLoginForm").addEventListener("submit", e => {
   e.preventDefault();
 
-  const user = document.getElementById("adminUser").value.trim();
-  const pass = document.getElementById("adminPass").value.trim();
-  const error = document.getElementById("error");
+  const u = adminUser.value.trim();
+  const p = adminPass.value.trim();
 
-  if (user === "admin" && pass === "admin") {
+  if (u === "admin" && p === "admin") {
     localStorage.setItem("adminLoggedIn", "yes");
-    window.location.href = "admin-dashboard.html";
+    location.href = "admin-dashboard.html";
   } else {
-    error.textContent = "Invalid admin credentials";
+    error.textContent = "Invalid credentials";
   }
 });
 </script>
