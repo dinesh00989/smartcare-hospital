@@ -5,35 +5,89 @@
   <title>Admin Login | SmartCare</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="style.css" />
+
+  <style>
+    /* Center screen override (safe) */
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #eef2ff, #f8fafc);
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 360px;
+      background: white;
+      padding: 32px;
+      border-radius: 18px;
+      box-shadow: 0 20px 45px rgba(0,0,0,0.12);
+      animation: fadeIn 0.4s ease;
+    }
+
+    .login-card h2 {
+      text-align: center;
+      margin-bottom: 22px;
+    }
+
+    .login-card button {
+      width: 100%;
+      margin-top: 18px;
+    }
+
+    .error {
+      color: #dc2626;
+      font-size: 14px;
+      text-align: center;
+      margin-top: 12px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
 </head>
 
-<body class="center">
+<body>
 
-  <form id="adminLoginForm" class="login-card">
+  <div class="login-card">
     <h2>🔐 Admin Login</h2>
 
-    <input type="text" id="adminUser" placeholder="Admin ID" required />
-    <input type="password" id="adminPass" placeholder="Password" required />
+    <input
+      type="text"
+      id="adminUser"
+      placeholder="Admin ID"
+      autocomplete="off"
+    />
 
-    <button type="submit">Login</button>
-    <p id="error" class="error"></p>
-  </form>
+    <input
+      type="password"
+      id="adminPass"
+      placeholder="Password"
+    />
 
-<script>
-document.getElementById("adminLoginForm").addEventListener("submit", e => {
-  e.preventDefault();
+    <button onclick="adminLogin()">Login</button>
 
-  const u = adminUser.value.trim();
-  const p = adminPass.value.trim();
+    <div id="loginError" class="error"></div>
+  </div>
 
-  if (u === "admin" && p === "admin") {
-    localStorage.setItem("adminLoggedIn", "yes");
-    location.href = "admin-dashboard.html";
-  } else {
-    error.textContent = "Invalid credentials";
-  }
-});
-</script>
+  <script>
+    function adminLogin() {
+      const u = document.getElementById("adminUser").value.trim();
+      const p = document.getElementById("adminPass").value.trim();
+
+      if (u === "admin" && p === "admin") {
+        // exam-safe frontend auth
+        localStorage.setItem("adminLoggedIn", "true");
+        window.location.href = "admin-dashboard.html";
+      } else {
+        document.getElementById("loginError").textContent =
+          "Invalid admin credentials";
+      }
+    }
+  </script>
 
 </body>
 </html>
