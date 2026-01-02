@@ -1,18 +1,57 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <title>Admin Login | SmartCare</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f8fafc;
+      font-family: system-ui;
+    }
+    .login-box {
+      background: #fff;
+      padding: 35px;
+      border-radius: 14px;
+      width: 320px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.12);
+      text-align: center;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+    .err {
+      color: red;
+      margin-top: 10px;
+    }
+  </style>
 </head>
-<body class="center">
+<body>
 
-<h2>🔐 Admin Login</h2>
+<div class="login-box">
+  <h2>🔐 Admin Login</h2>
 
-<p><b>ID:</b> admin<br><b>Password:</b> admin</p>
+  <input id="adminUser" placeholder="Admin ID">
+  <input id="adminPass" type="password" placeholder="Password">
 
-<button onclick="location.href='admin-dashboard.html'">
-  Enter Admin Dashboard
-</button>
+  <button onclick="adminLogin()">Login</button>
 
-</body>
-</html>
+  <p class="err" id="err"></p>
+
+  <p style="margin-top:10px;color:gray">
