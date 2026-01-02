@@ -1,33 +1,35 @@
 /* =====================================================
-   SMARTCARE – PREMIUM SAAS STYLESHEET (FIXED)
-   Stable • Modern • Animated • Future-ready
+   SMARTCARE – PREMIUM 3D SAAS STYLESHEET (ENHANCED)
+   Modern • 3D • Clean • Exam-Safe • Production-Ready
 ===================================================== */
 
 /* -------------------------
    CSS VARIABLES
 -------------------------- */
 :root {
-  --bg-main: #f8fafc;
+  --bg-main: linear-gradient(135deg, #f8fafc, #eef2ff);
   --bg-card: #ffffff;
   --bg-soft: #eef2ff;
 
   --primary: #2563eb;
   --primary-dark: #1e40af;
+  --primary-glow: rgba(37,99,235,0.35);
 
-  --text-main: #111827;
-  --text-muted: #6b7280;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
 
-  --border-soft: #e5e7eb;
+  --border-soft: rgba(0,0,0,0.06);
 
-  --shadow-sm: 0 2px 6px rgba(0,0,0,0.06);
-  --shadow-md: 0 8px 20px rgba(0,0,0,0.10);
-  --shadow-lg: 0 16px 40px rgba(0,0,0,0.15);
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-sm: 0 4px 10px rgba(0,0,0,0.08);
+  --shadow-md: 0 12px 30px rgba(0,0,0,0.15);
+  --shadow-lg: 0 30px 60px rgba(0,0,0,0.22);
 
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 18px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
 
-  --transition: 0.25s ease;
+  --transition: 0.28s cubic-bezier(.4,0,.2,1);
 }
 
 /* -------------------------
@@ -46,15 +48,15 @@ body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--bg-main);
   color: var(--text-main);
-  line-height: 1.6;
+  line-height: 1.65;
 }
 
 /* -------------------------
    TYPOGRAPHY
 -------------------------- */
 h1, h2, h3, h4 {
-  font-weight: 700;
-  letter-spacing: -0.3px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
   margin-top: 0;
 }
 
@@ -68,15 +70,23 @@ a {
 }
 
 /* -------------------------
-   NAVBAR
+   NAVBAR (GLASS + DEPTH)
 -------------------------- */
 nav {
-  background: var(--primary-dark);
+  background: linear-gradient(
+    135deg,
+    var(--primary-dark),
+    var(--primary)
+  );
   color: white;
-  padding: 16px 28px;
+  padding: 18px 32px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  box-shadow: var(--shadow-md);
+  position: sticky;
+  top: 0;
+  z-index: 999;
 }
 
 nav h2 {
@@ -85,15 +95,16 @@ nav h2 {
 }
 
 nav a {
-  margin-left: 18px;
+  margin-left: 20px;
   font-weight: 500;
   position: relative;
+  opacity: 0.95;
 }
 
 nav a::after {
   content: "";
   position: absolute;
-  bottom: -4px;
+  bottom: -6px;
   left: 0;
   height: 2px;
   width: 0%;
@@ -109,29 +120,32 @@ nav a:hover::after {
    SECTIONS
 -------------------------- */
 .section {
-  max-width: 1100px;
+  max-width: 1200px;
   margin: auto;
-  padding: 60px 24px;
+  padding: 70px 26px;
 }
 
 .section.light {
   background: var(--bg-soft);
   border-radius: var(--radius-lg);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04);
 }
 
 /* -------------------------
-   FORMS
+   FORMS (FLOAT + DEPTH)
 -------------------------- */
 input,
 select,
 textarea {
   width: 100%;
-  padding: 12px;
+  padding: 14px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-soft);
-  margin-top: 8px;
+  margin-top: 10px;
   font-size: 14px;
-  transition: border var(--transition), box-shadow var(--transition);
+  background: white;
+  box-shadow: var(--shadow-xs);
+  transition: box-shadow var(--transition), border var(--transition), transform var(--transition);
 }
 
 input:focus,
@@ -139,81 +153,91 @@ select:focus,
 textarea:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(37,99,235,0.25);
+  box-shadow:
+    0 0 0 4px rgba(37,99,235,0.18),
+    var(--shadow-sm);
+  transform: translateY(-1px);
 }
 
 /* -------------------------
-   BUTTONS
+   BUTTONS (TRUE 3D)
 -------------------------- */
 button {
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary), #3b82f6);
   color: white;
-  padding: 12px 20px;
+  padding: 13px 22px;
   border: none;
   border-radius: var(--radius-sm);
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  margin-top: 14px;
-  transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
+  margin-top: 16px;
+  box-shadow:
+    0 6px 0 #1e40af,
+    var(--shadow-sm);
+  transition: transform var(--transition), box-shadow var(--transition), filter var(--transition);
 }
 
 button:hover {
-  background: #1d4ed8;
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-3px);
+  box-shadow:
+    0 10px 0 #1e40af,
+    var(--shadow-md);
+  filter: brightness(1.05);
 }
 
 button:active {
   transform: translateY(0);
-  box-shadow: var(--shadow-sm);
+  box-shadow:
+    0 4px 0 #1e40af,
+    var(--shadow-sm);
 }
 
 button.btn-secondary {
-  background: #6b7280;
+  background: linear-gradient(135deg, #6b7280, #9ca3af);
+  box-shadow: 0 6px 0 #4b5563;
 }
 
 button.btn-danger {
-  background: #dc2626;
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+  box-shadow: 0 6px 0 #991b1b;
 }
 
 /* -------------------------
-   CARDS
+   CARDS (FLOATING 3D)
 -------------------------- */
 .card {
   background: var(--bg-card);
   border-radius: var(--radius-md);
-  padding: 20px;
+  padding: 22px;
   box-shadow: var(--shadow-sm);
   transition: transform var(--transition), box-shadow var(--transition);
+  transform-style: preserve-3d;
 }
 
 .card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-8px) scale(1.01);
+  box-shadow: var(--shadow-lg);
 }
 
 .card.soft {
   background: #f1f5f9;
 }
 
+/* -------------------------
+   CARD GRID
+-------------------------- */
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 26px;
 }
 
 /* -------------------------
    DOCTOR LIST
 -------------------------- */
-.doctor-list {
-  padding: 0;
-  margin: 0;
-}
-
 .doctor-list li {
   background: var(--bg-card);
-  padding: 16px;
-  margin-top: 12px;
+  padding: 18px;
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   cursor: pointer;
@@ -221,12 +245,12 @@ button.btn-danger {
 }
 
 .doctor-list li:hover {
-  transform: translateY(-3px);
+  transform: translateY(-6px);
   box-shadow: var(--shadow-md);
 }
 
 /* -------------------------
-   DOCTOR RIGHT PANEL
+   DOCTOR RIGHT PANEL (SLIDE + DEPTH)
 -------------------------- */
 .doctor-panel {
   position: fixed;
@@ -237,7 +261,7 @@ button.btn-danger {
   height: 100%;
   background: var(--bg-card);
   box-shadow: var(--shadow-lg);
-  transition: right 0.35s ease;
+  transition: right 0.4s cubic-bezier(.4,0,.2,1);
   z-index: 1000;
 }
 
@@ -246,66 +270,62 @@ button.btn-danger {
 }
 
 .panel-content {
-  padding: 24px;
+  padding: 28px;
   overflow-y: auto;
   height: 100%;
 }
 
 .panel-photo {
-  width: 120px;
-  height: 120px;
+  width: 130px;
+  height: 130px;
   border-radius: 50%;
   display: block;
-  margin: 0 auto 12px;
+  margin: 0 auto 16px;
+  box-shadow: var(--shadow-md);
 }
 
+/* -------------------------
+   CLOSE BUTTON
+-------------------------- */
 .close-btn {
   position: absolute;
-  top: 14px;
-  right: 14px;
-  background: none;
+  top: 16px;
+  right: 16px;
+  background: white;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
   border: none;
-  font-size: 22px;
+  font-size: 20px;
   cursor: pointer;
+  box-shadow: var(--shadow-sm);
   transition: transform var(--transition);
 }
 
 .close-btn:hover {
-  transform: rotate(90deg);
+  transform: rotate(90deg) scale(1.05);
 }
 
 /* -------------------------
-   STATUS BADGES (FIXED)
+   STATUS BADGES
 -------------------------- */
 .status-badge {
   display: inline-block;
-  padding: 5px 14px;
+  padding: 6px 16px;
   border-radius: 999px;
   font-size: 12px;
-  font-weight: 600;
-  margin-bottom: 10px;
+  font-weight: 700;
+  margin-bottom: 12px;
 }
 
 .status-available {
-  background: #dcfce7;
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
   color: #166534;
 }
 
 .status-limited {
-  background: #fef3c7;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
   color: #92400e;
-}
-
-/* -------------------------
-   LISTS
--------------------------- */
-ul {
-  list-style: none;
-  padding: 0;
-}
-
-ul li {
-  margin-top: 10px;
 }
 
 /* -------------------------
@@ -313,14 +333,15 @@ ul li {
 -------------------------- */
 footer {
   text-align: center;
-  padding: 28px;
-  background: var(--primary-dark);
+  padding: 30px;
+  background: linear-gradient(135deg, var(--primary-dark), var(--primary));
   color: white;
-  margin-top: 60px;
+  margin-top: 80px;
+  box-shadow: var(--shadow-md);
 }
 
 /* -------------------------
-   ANIMATION SAFETY
+   REDUCED MOTION
 -------------------------- */
 @media (prefers-reduced-motion: reduce) {
   * {

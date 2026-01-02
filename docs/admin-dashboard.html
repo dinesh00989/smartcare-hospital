@@ -1,126 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Admin Dashboard | SmartCare</title>
-  <link rel="stylesheet" href="style.css">
-  <style>
-    body {
-      margin: 0;
-      font-family: system-ui;
-      background: #f1f5f9;
-    }
-    nav {
-      background: #1e40af;
-      color: white;
-      padding: 15px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .wrap {
-      max-width: 900px;
-      margin: 30px auto;
-    }
-    .card {
-      background: white;
-      padding: 15px;
-      border-radius: 10px;
-      box-shadow: 0 6px 15px rgba(0,0,0,0.08);
-      margin-bottom: 15px;
-    }
-    button {
-      padding: 6px 10px;
-      margin-right: 5px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    .del { background:#dc2626; color:white; }
-    .edit { background:#2563eb; color:white; }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
 
-<nav>
-  <h3>🏥 SmartCare – Admin Dashboard</h3>
-  <button onclick="logout()">Logout</button>
-</nav>
-
-<div class="wrap">
-  <h2>📋 All Hospital Appointments</h2>
-  <div id="list"></div>
-</div>
-
 <script>
-/* 🔒 PROTECT PAGE */
 if (localStorage.getItem("adminLoggedIn") !== "yes") {
   location.href = "admin-login.html";
 }
+</script>
 
-/* 📦 LOAD DATA */
-function getData() {
-  return JSON.parse(localStorage.getItem("appointments")) || [];
+<nav>
+  <h2>🏥 SmartCare – Admin</h2>
+  <button onclick="logout()">Logout</button>
+</nav>
+
+<div class="container">
+  <h3>📋 All Hospital Appointments</h3>
+  <div id="records"></div>
+</div>
+
+<script>
+const API = "https://smartcare-hospital.onrender.com";
+
+function loadData() {
+  fetch(`${API}/appointments`)
+    .then(res => res.json())
+    .then(data => {
+      records.innerHTML = "";
+
+      if (!data.length) {
+        records.innerHTML = "<p>No records found</p>";
+        return;
+      }
+
+      data.forEach(a => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <b>Patient:</b> ${a.patientName}<br>
+          <b>Doctor:</b> ${a.doctor}<br>
+          <b>Date:</b> ${a.date}<br><br>
+          <button class="danger" onclick="del('${a._id}')">Delete</button>
+        `;
+        records.appendChild(card);
+      });
+    });
 }
 
-function saveData(d) {
-  localStorage.setItem("appointments", JSON.stringify(d));
-}
-
-/* 📋 RENDER */
-function render() {
-  const data = getData();
-  list.innerHTML = "";
-
-  if (!data.length) {
-    list.innerHTML = "<p>No records found</p>";
-    return;
-  }
-
-  data.forEach((a, i) => {
-    const div = document.createElement("div");
-    div.className = "card";
-    div.innerHTML = `
-      <b>Patient:</b> ${a.patient}<br>
-      <b>Doctor:</b> ${a.doctor}<br>
-      <b>Date:</b> ${a.date}<br><br>
-      <button class="edit" onclick="editRec(${i})">Edit</button>
-      <button class="del" onclick="delRec(${i})">Delete</button>
-    `;
-    list.appendChild(div);
-  });
-}
-
-/* ✏️ EDIT */
-function editRec(i) {
-  const d = getData();
-  const p = prompt("Patient Name", d[i].patient);
-  const doc = prompt("Doctor Name", d[i].doctor);
-  const date = prompt("Date", d[i].date);
-
-  if (!p || !doc || !date) return;
-
-  d[i] = { patient: p, doctor: doc, date };
-  saveData(d);
-  render();
-}
-
-/* ❌ DELETE */
-function delRec(i) {
+function del(id) {
   if (!confirm("Delete this record?")) return;
-  const d = getData();
-  d.splice(i, 1);
-  saveData(d);
-  render();
+
+  fetch(`${API}/appointments/${id}`, {
+    method: "DELETE"
+  }).then(loadData);
 }
 
-/* 🚪 LOGOUT */
 function logout() {
   localStorage.removeItem("adminLoggedIn");
   location.href = "admin-login.html";
 }
 
-render();
+loadData();
 </script>
 
 </body>
