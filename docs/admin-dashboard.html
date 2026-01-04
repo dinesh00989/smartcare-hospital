@@ -1,83 +1,161 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
   <title>Admin Dashboard | SmartCare</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 14px;
+      background: white;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 14px;
+    }
+
+    th {
+      background: #2563eb;
+      color: white;
+    }
+
+    tr:hover {
+      background: #f1f5f9;
+    }
+
+    .danger {
+      background: #dc2626;
+    }
+
+    .danger:hover {
+      background: #b91c1c;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+  </style>
 </head>
 
 <body>
 
-<nav>
+<nav class="topbar">
   <h2>🏥 Admin Dashboard</h2>
-  <button onclick="logout()">Logout</button>
+  <button class="danger" onclick="logout()">Logout</button>
 </nav>
 
 <section class="section">
 
-<h3>Appointments</h3>
-<table border="1" width="100%" id="apt">
-<tr><th>Patient</th><th>Doctor</th><th>Date</th><th>Action</th></tr>
-</table>
+  <h3>📅 Appointments</h3>
+  <table id="apt">
+    <tr>
+      <th>Patient</th>
+      <th>Doctor</th>
+      <th>Date</th>
+      <th>Action</th>
+    </tr>
+  </table>
 
-<h3 style="margin-top:30px">Prescriptions</h3>
-<table border="1" width="100%" id="rx">
-<tr><th>Patient</th><th>Doctor</th><th>Diagnosis</th><th>Medicines</th><th>Date</th><th>Action</th></tr>
-</table>
+  <h3 style="margin-top:40px;">💊 Prescriptions</h3>
+  <table id="rx">
+    <tr>
+      <th>Patient</th>
+      <th>Doctor</th>
+      <th>Diagnosis</th>
+      <th>Medicines</th>
+      <th>Date</th>
+      <th>Action</th>
+    </tr>
+  </table>
 
 </section>
 
 <script>
 const API = "https://smartcare-hospital.onrender.com";
 
-if (localStorage.getItem("adminLoggedIn") !== "true") {
-  location.href = "admin-login.html";
-}
-
-/* LOAD APPOINTMENTS */
-fetch(`${API}/admin/appointments`)
-.then(r => r.json())
-.then(d => {
-  d.forEach(a => {
-    apt.innerHTML += `
-    <tr>
-      <td>${a.patientName}</td>
-      <td>${a.doctor}</td>
-      <td>${a.date}</td>
-      <td><button onclick="delA('${a._id}')">Delete</button></td>
-    </tr>`;
+/* ================= AUTH CHECK ================= */
+(async function checkAdmin() {
+  const res = await fetch(`${API}/admin/appointments`, {
+    credentials: "include"
   });
-});
+  if (res.status === 401 || res.status === 403) {
+    location.href = "admin-login.html";
+  }
+})();
 
-/* LOAD PRESCRIPTIONS */
-fetch(`${API}/admin/prescriptions`)
-.then(r => r.json())
-.then(d => {
-  d.forEach(p => {
-    rx.innerHTML += `
-    <tr>
-      <td>${p.patientName}</td>
-      <td>${p.doctor}</td>
-      <td>${p.diagnosis}</td>
-      <td>${p.medicines}</td>
-      <td>${p.date}</td>
-      <td><button onclick="delP('${p._id}')">Delete</button></td>
-    </tr>`;
+/* ================= LOAD APPOINTMENTS ================= */
+fetch(`${API}/admin/appointments`, { credentials: "include" })
+  .then(r => r.json())
+  .then(data => {
+    data.forEach(a => {
+      apt.innerHTML += `
+        <tr>
+          <td>${a.patientName}</td>
+          <td>${a.doctor}</td>
+          <td>${a.date}</td>
+          <td>
+            <button class="danger" onclick="delA('${a._id}')">Delete</button>
+          </td>
+        </tr>
+      `;
+    });
   });
-});
 
+/* ================= LOAD PRESCRIPTIONS ================= */
+fetch(`${API}/admin/prescriptions`, { credentials: "include" })
+  .then(r => r.json())
+  .then(data => {
+    data.forEach(p => {
+      rx.innerHTML += `
+        <tr>
+          <td>${p.patientName}</td>
+          <td>${p.doctor}</td>
+          <td>${p.diagnosis}</td>
+          <td>${p.medicines}</td>
+          <td>${p.date}</td>
+          <td>
+            <button class="danger" onclick="delP('${p._id}')">Delete</button>
+          </td>
+        </tr>
+      `;
+    });
+  });
+
+/* ================= DELETE ================= */
 function delA(id) {
-  fetch(`${API}/admin/appointments/${id}`, { method: "DELETE" })
-  .then(() => location.reload());
+  fetch(`${API}/admin/appointments/${id}`, {
+    method: "DELETE",
+    credentials: "include"
+  }).then(() => location.reload());
 }
 
 function delP(id) {
-  fetch(`${API}/admin/prescriptions/${id}`, { method: "DELETE" })
-  .then(() => location.reload());
+  fetch(`${API}/admin/prescriptions/${id}`, {
+    method: "DELETE",
+    credentials: "include"
+  }).then(() => location.reload());
 }
 
+/* ================= LOGOUT ================= */
 function logout() {
-  localStorage.removeItem("adminLoggedIn");
-  location.href = "admin-login.html";
+  fetch(`${API}/logout`, {
+    method: "POST",
+    credentials: "include"
+  }).then(() => {
+    location.href = "admin-login.html";
+  });
 }
 </script>
 
