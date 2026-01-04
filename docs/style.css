@@ -35,13 +35,9 @@
 /* -------------------------
    RESET & BASE
 -------------------------- */
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
-html {
-  scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 body {
   margin: 0;
@@ -60,24 +56,15 @@ h1, h2, h3, h4 {
   margin-top: 0;
 }
 
-p {
-  color: var(--text-muted);
-}
+p { color: var(--text-muted); }
 
-a {
-  text-decoration: none;
-  color: inherit;
-}
+a { text-decoration: none; color: inherit; }
 
 /* -------------------------
-   NAVBAR (GLASS + DEPTH)
+   NAVBAR
 -------------------------- */
 nav {
-  background: linear-gradient(
-    135deg,
-    var(--primary-dark),
-    var(--primary)
-  );
+  background: linear-gradient(135deg, var(--primary-dark), var(--primary));
   color: white;
   padding: 18px 32px;
   display: flex;
@@ -89,16 +76,10 @@ nav {
   z-index: 999;
 }
 
-nav h2 {
-  margin: 0;
-  font-size: 20px;
-}
-
 nav a {
   margin-left: 20px;
   font-weight: 500;
   position: relative;
-  opacity: 0.95;
 }
 
 nav a::after {
@@ -112,9 +93,7 @@ nav a::after {
   transition: width var(--transition);
 }
 
-nav a:hover::after {
-  width: 100%;
-}
+nav a:hover::after { width: 100%; }
 
 /* -------------------------
    SECTIONS
@@ -132,69 +111,51 @@ nav a:hover::after {
 }
 
 /* -------------------------
-   FORMS (FLOAT + DEPTH)
+   FORMS
 -------------------------- */
-input,
-select,
-textarea {
+input, select, textarea {
   width: 100%;
   padding: 14px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-soft);
   margin-top: 10px;
-  font-size: 14px;
   background: white;
   box-shadow: var(--shadow-xs);
-  transition: box-shadow var(--transition), border var(--transition), transform var(--transition);
+  transition: box-shadow var(--transition), transform var(--transition);
 }
 
 input:focus,
 select:focus,
 textarea:focus {
   outline: none;
-  border-color: var(--primary);
-  box-shadow:
-    0 0 0 4px rgba(37,99,235,0.18),
-    var(--shadow-sm);
+  box-shadow: 0 0 0 4px rgba(37,99,235,0.18), var(--shadow-sm);
   transform: translateY(-1px);
 }
 
 /* -------------------------
-   BUTTONS (TRUE 3D)
+   BUTTONS
 -------------------------- */
 button {
   background: linear-gradient(135deg, var(--primary), #3b82f6);
   color: white;
   padding: 13px 22px;
-  border: none;
   border-radius: var(--radius-sm);
+  border: none;
   font-weight: 700;
   cursor: pointer;
   margin-top: 16px;
-  box-shadow:
-    0 6px 0 #1e40af,
-    var(--shadow-sm);
-  transition: transform var(--transition), box-shadow var(--transition), filter var(--transition);
+  box-shadow: 0 6px 0 #1e40af, var(--shadow-sm);
+  transition: transform var(--transition), box-shadow var(--transition);
 }
 
 button:hover {
   transform: translateY(-3px);
-  box-shadow:
-    0 10px 0 #1e40af,
-    var(--shadow-md);
-  filter: brightness(1.05);
+  box-shadow: 0 10px 0 #1e40af, var(--shadow-md);
 }
 
 button:active {
   transform: translateY(0);
-  box-shadow:
-    0 4px 0 #1e40af,
-    var(--shadow-sm);
-}
-
-button.btn-secondary {
-  background: linear-gradient(135deg, #6b7280, #9ca3af);
-  box-shadow: 0 6px 0 #4b5563;
+  box-shadow: 0 4px 0 #1e40af, var(--shadow-sm);
 }
 
 button.btn-danger {
@@ -203,7 +164,7 @@ button.btn-danger {
 }
 
 /* -------------------------
-   CARDS (FLOATING 3D)
+   CARDS
 -------------------------- */
 .card {
   background: var(--bg-card);
@@ -211,7 +172,6 @@ button.btn-danger {
   padding: 22px;
   box-shadow: var(--shadow-sm);
   transition: transform var(--transition), box-shadow var(--transition);
-  transform-style: preserve-3d;
 }
 
 .card:hover {
@@ -219,13 +179,6 @@ button.btn-danger {
   box-shadow: var(--shadow-lg);
 }
 
-.card.soft {
-  background: #f1f5f9;
-}
-
-/* -------------------------
-   CARD GRID
--------------------------- */
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -233,100 +186,20 @@ button.btn-danger {
 }
 
 /* -------------------------
-   DOCTOR LIST
--------------------------- */
-.doctor-list li {
-  background: var(--bg-card);
-  padding: 18px;
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  cursor: pointer;
-  transition: transform var(--transition), box-shadow var(--transition);
-}
-
-.doctor-list li:hover {
-  transform: translateY(-6px);
-  box-shadow: var(--shadow-md);
-}
-
-/* -------------------------
-   DOCTOR RIGHT PANEL (SLIDE + DEPTH)
+   DOCTOR PANEL
 -------------------------- */
 .doctor-panel {
   position: fixed;
-  top: 0;
   right: -420px;
-  width: 400px;
-  max-width: 90vw;
+  top: 0;
   height: 100%;
-  background: var(--bg-card);
+  width: 400px;
+  background: white;
   box-shadow: var(--shadow-lg);
   transition: right 0.4s cubic-bezier(.4,0,.2,1);
-  z-index: 1000;
 }
 
-.doctor-panel.open {
-  right: 0;
-}
-
-.panel-content {
-  padding: 28px;
-  overflow-y: auto;
-  height: 100%;
-}
-
-.panel-photo {
-  width: 130px;
-  height: 130px;
-  border-radius: 50%;
-  display: block;
-  margin: 0 auto 16px;
-  box-shadow: var(--shadow-md);
-}
-
-/* -------------------------
-   CLOSE BUTTON
--------------------------- */
-.close-btn {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: white;
-  border-radius: 50%;
-  width: 36px;
-  height: 36px;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  box-shadow: var(--shadow-sm);
-  transition: transform var(--transition);
-}
-
-.close-btn:hover {
-  transform: rotate(90deg) scale(1.05);
-}
-
-/* -------------------------
-   STATUS BADGES
--------------------------- */
-.status-badge {
-  display: inline-block;
-  padding: 6px 16px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-  margin-bottom: 12px;
-}
-
-.status-available {
-  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
-  color: #166534;
-}
-
-.status-limited {
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
-  color: #92400e;
-}
+.doctor-panel.open { right: 0; }
 
 /* -------------------------
    FOOTER
@@ -336,15 +209,54 @@ footer {
   padding: 30px;
   background: linear-gradient(135deg, var(--primary-dark), var(--primary));
   color: white;
-  margin-top: 80px;
   box-shadow: var(--shadow-md);
 }
 
-/* -------------------------
-   REDUCED MOTION
--------------------------- */
+/* =====================================================
+   🔽 SAFE ADDITIONS – 3D POLISH ONLY (NO OVERRIDES)
+===================================================== */
+
+/* Page entry polish */
+.section,
+.card,
+table {
+  animation: fadeUp 0.6s ease both;
+}
+
+/* Admin tables depth */
+table {
+  border-collapse: collapse;
+  background: white;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+tr:hover { background: #f1f5f9; }
+
+/* Login card micro-lift */
+.login-card {
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.login-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Accessibility */
+button:focus-visible {
+  outline: 3px solid var(--primary-glow);
+  outline-offset: 2px;
+}
+
+/* Animation */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  * {
-    transition: none !important;
-  }
+  * { animation: none !important; transition: none !important; }
 }
