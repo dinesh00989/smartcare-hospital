@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+\<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="style.css" />
 
   <style>
-    /* Center screen override (safe) */
     body {
       min-height: 100vh;
       display: flex;
@@ -55,18 +54,8 @@
   <div class="login-card">
     <h2>🔐 Admin Login</h2>
 
-    <input
-      type="text"
-      id="adminUser"
-      placeholder="Admin ID"
-      autocomplete="off"
-    />
-
-    <input
-      type="password"
-      id="adminPass"
-      placeholder="Password"
-    />
+    <input id="adminUser" placeholder="Admin ID" autocomplete="off" />
+    <input id="adminPass" type="password" placeholder="Password" />
 
     <button onclick="adminLogin()">Login</button>
 
@@ -74,17 +63,40 @@
   </div>
 
   <script>
-    function adminLogin() {
-      const u = document.getElementById("adminUser").value.trim();
-      const p = document.getElementById("adminPass").value.trim();
+    const API = "https://smartcare-hospital.onrender.com";
 
-      if (u === "admin" && p === "admin") {
-        // exam-safe frontend auth
-        localStorage.setItem("adminLoggedIn", "true");
+    async function adminLogin() {
+      const username = adminUser.value.trim();
+      const password = adminPass.value.trim();
+      loginError.textContent = "";
+
+      if (!username || !password) {
+        loginError.textContent = "Enter admin credentials";
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ username, password })
+        });
+
+        if (!res.ok) throw new Error();
+
+        const data = await res.json();
+
+        if (data.role !== "admin") {
+          loginError.textContent = "Admin access only";
+          return;
+        }
+
+        // ✅ backend-authenticated admin
         window.location.href = "admin-dashboard.html";
-      } else {
-        document.getElementById("loginError").textContent =
-          "Invalid admin credentials";
+
+      } catch {
+        loginError.textContent = "Invalid admin credentials";
       }
     }
   </script>
