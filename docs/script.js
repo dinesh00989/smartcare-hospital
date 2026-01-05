@@ -1,153 +1,294 @@
-/****************************************
- SMARTCARE – FINAL BACKEND SERVER
- Admin + Doctor + Appointments (CRUD)
-*****************************************/
+/*************************************************
+ SMARTCARE – FINAL FRONTEND SCRIPT
+ Works with Render Backend + MongoDB Atlas
+**************************************************/
 
-require("dotenv").config();
-const express = require("express");
-const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
-const cors = require("cors");
-const session = require("express-session");
+const API = "https://smartcare-hospital.onrender.com";
 
-const app = express();
+/* =================================================
+   APPOINTMENTS – PUBLIC BOOKING
+================================================= */
+async function addAppointment() {
+  const patientName = document.getElementById("aptPatient").value.trim();
+  const doctor = document.getElementById("aptDoctor").value;
+  const date = document.getElementById("aptDate").value;
 
-/* ========= MIDDLEWARE ========= */
-app.use(express.json());
-
-app.use(cors({
-  origin: "https://dinesh00989.github.io",
-  credentials: true
-}));
-
-/* ========= DATABASE ========= */
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB Connected"))
-  .catch(err => {
-    console.error("❌ MongoDB Error", err);
-    process.exit(1);
-  });
-
-/* ========= SESSION ========= */
-app.use(session({
-  name: "smartcare.sid",
-  secret: "smartcare-secret",
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    httpOnly: true,
-    secure: true,
-    sameSite: "none",
-    maxAge: 1000 * 60 * 60
-  }
-}));
-
-/* ========= MODELS ========= */
-const User = mongoose.model("User", new mongoose.Schema({
-  username: String,
-  password: String,
-  role: String
-}));
-
-const Appointment = mongoose.model("Appointment", new mongoose.Schema({
-  patientName: String,
-  doctor: String,
-  date: String
-}));
-
-/* ========= SEED USERS ========= */
-(async function seedUsers() {
-  if (await User.countDocuments()) return;
-
-  const users = [
-    { username: "admin", password: "admin", role: "admin" },
-    { username: "drrao", password: "doctor", role: "doctor" },
-    { username: "drmeena", password: "doctor", role: "doctor" },
-    { username: "drkumar", password: "doctor", role: "doctor" },
-    { username: "drsharma", password: "doctor", role: "doctor" }
-  ];
-
-  for (const u of users) {
-    const hash = await bcrypt.hash(u.password, 10);
-    await User.create({ ...u, password: hash });
+  if (!patientName || !doctor || !date) {
+    alert("Fill all appointment fields");
+    return;
   }
 
-  console.log("👥 Default users created");
-})();
-
-/* ========= AUTH HELPERS ========= */
-function isLoggedIn(req, res, next) {
-  if (!req.session.user) return res.status(401).json({ message: "Login required" });
-  next();
-}
-
-function requireRole(role) {
-  return (req, res, next) => {
-    if (req.session.user.role !== role)
-      return res.status(403).json({ message: "Access denied" });
-    next();
-  };
-}
-
-/* ========= ROUTES ========= */
-app.get("/", (_, res) => res.send("🚀 SmartCare Backend Running"));
-
-app.post("/login", async (req, res) => {
-  const { username, password } = req.body;
-
-  const user = await User.findOne({ username });
-  if (!user) return res.status(401).json({});
-
-  const ok = await bcrypt.compare(password, user.password);
-  if (!ok) return res.status(401).json({});
-
-  req.session.user = {
-    id: user._id,
-    username: user.username,
-    role: user.role
-  };
-
-  res.json({ role: user.role });
-});
-
-app.post("/logout", (req, res) => {
-  req.session.destroy(() => {
-    res.clearCookie("smartcare.sid");
-    res.json({ message: "Logged out" });
+  const res = await fetch(`${API}/appointments`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ patientName, doctor, date })
   });
-});
 
-/* ========= APPOINTMENTS ========= */
-app.post("/appointments", async (req, res) => {
-  const data = await Appointment.create(req.body);
-  res.json(data);
-});
+  if (res.ok) {
+    alert("Appointment booked successfully");
+    document.getElementById("appointmentForm").reset();
+  } else {
+    alert("Failed to book appointment");
+  }
+}
 
-/* Doctor view */
-app.get("/appointments", isLoggedIn, requireRole("doctor"), async (req, res) => {
-  const map = {
-    drrao: "Dr. A. Rao",
-    drmeena: "Dr. Meena S.",
-    drkumar: "Dr. K. Kumar",
-    drsharma: "Dr. P. Sharma"
-  };
-  const doctor = map[req.session.user.username];
-  const data = await Appointment.find({ doctor });
-  res.json(data);
-});
+/* =================================================
+   DOCTOR LOGIN (GLOBAL)
+================================================= */
+async function doctorLogin() {
+  const username = docUser.value.trim().toLowerCase();
+  const password = docPass.value.trim();
 
-/* Admin view */
-app.get("/admin/appointments", isLoggedIn, requireRole("admin"), async (_, res) => {
-  const data = await Appointment.find().sort({ _id: -1 });
-  res.json(data);
-});
+  const res = await fetch(`${API}/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ username, password })
+  });
 
-/* Admin delete */
-app.delete("/admin/appointments/:id", isLoggedIn, requireRole("admin"), async (req, res) => {
-  await Appointment.findByIdAndDelete(req.params.id);
-  res.json({ message: "Deleted" });
-});
+  if (!res.ok) {
+    loginError.textContent = "Invalid credentials";
+    return;
+  }
 
-/* ========= START ========= */
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Server running on ${PORT}`));
+  const data = await res.json();
+  if (data.role !== "doctor") {
+    loginError.textContent = "Not a doctor account";
+    return;
+  }
+
+  localStorage.setItem("doctorLoggedIn", "true");
+  localStorage.setItem("doctorUser", username);
+
+  showDoctorDashboard();
+}
+
+/* =================================================
+   DOCTOR DASHBOARD – APPOINTMENTS
+================================================= */
+async function showDoctorDashboard() {
+  doctorLoginBox.style.display = "none";
+  doctorDashboard.style.display = "block";
+  loadDoctorAppointments();
+}
+
+async function loadDoctorAppointments() {
+  doctorAppointmentCards.innerHTML = "";
+
+  const res = await fetch(`${API}/appointments`, {
+    credentials: "include"
+  });
+
+  if (!res.ok) {
+    doctorAppointmentCards.innerHTML =
+      "<p>No appointments found</p>";
+    return;
+  }
+
+  const data = await res.json();
+
+  if (!data.length) {
+    doctorAppointmentCards.innerHTML =
+      "<p>No appointments assigned</p>";
+    return;
+  }
+
+  data.forEach(a => {
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `
+      <h4>${a.patientName}</h4>
+      <p><b>Date:</b> ${a.date}</p>
+      <p><b>Doctor:</b> ${a.doctor}</p>
+    `;
+    doctorAppointmentCards.appendChild(div);
+  });
+}
+
+function doctorLogout() {
+  fetch(`${API}/logout`, {
+    method: "POST",
+    credentials: "include"
+  }).finally(() => {
+    localStorage.removeItem("doctorLoggedIn");
+    localStorage.removeItem("doctorUser");
+    location.reload();
+  });
+}
+
+/* =================================================
+   PRESCRIPTION MODULE (BACKEND CONNECTED)
+================================================= */
+async function doctorLoginFromPrescription() {
+  const username = docUser.value.trim().toLowerCase();
+  const password = docPass.value.trim();
+
+  const res = await fetch(`${API}/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ username, password })
+  });
+
+  if (!res.ok) {
+    loginError.textContent = "Invalid credentials";
+    return;
+  }
+
+  localStorage.setItem("doctorLoggedIn", "true");
+  localStorage.setItem("doctorUser", username);
+
+  showPrescriptionModule(username);
+}
+
+function showPrescriptionModule(username) {
+  doctorLoginBox.style.display = "none";
+  prescriptionModule.style.display = "block";
+  doctorNameText.textContent = username;
+}
+
+/* SAVE PRESCRIPTION */
+async function savePrescription() {
+  const patientName = prePatient.value.trim();
+  const diagnosis = prescriptionTemplate.value;
+  const medicines = medicine.value.trim();
+  const doctor = localStorage.getItem("doctorUser");
+
+  if (!patientName || !medicines) {
+    alert("Fill all prescription fields");
+    return;
+  }
+
+  const res = await fetch(`${API}/prescriptions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({
+      patientName,
+      doctor,
+      diagnosis,
+      medicines,
+      date: new Date().toLocaleDateString()
+    })
+  });
+
+  if (res.ok) {
+    alert("Prescription saved");
+    prePatient.value = "";
+    medicine.value = "";
+  } else {
+    alert("Failed to save prescription");
+  }
+}
+
+/* =================================================
+   ADMIN LOGIN (SAFE + SIMPLE)
+================================================= */
+function adminLogin() {
+  const u = adminUser.value.trim();
+  const p = adminPass.value.trim();
+
+  if (u === "admin" && p === "admin") {
+    localStorage.setItem("adminLoggedIn", "true");
+    location.href = "admin-dashboard.html";
+  } else {
+    loginError.textContent = "Invalid admin credentials";
+  }
+}
+
+/* =================================================
+   ADMIN DASHBOARD
+================================================= */
+async function loadAdminAppointments() {
+  const res = await fetch(`${API}/admin/appointments`, {
+    credentials: "include"
+  });
+  const data = await res.json();
+
+  apt.innerHTML = `
+    <tr>
+      <th>Patient</th>
+      <th>Doctor</th>
+      <th>Date</th>
+      <th>Action</th>
+    </tr>`;
+
+  data.forEach(a => {
+    apt.innerHTML += `
+      <tr>
+        <td>${a.patientName}</td>
+        <td>${a.doctor}</td>
+        <td>${a.date}</td>
+        <td>
+          <button onclick="deleteAppointment('${a._id}')">Delete</button>
+        </td>
+      </tr>`;
+  });
+}
+
+async function loadAdminPrescriptions() {
+  const res = await fetch(`${API}/admin/prescriptions`, {
+    credentials: "include"
+  });
+  const data = await res.json();
+
+  rx.innerHTML = `
+    <tr>
+      <th>Patient</th>
+      <th>Doctor</th>
+      <th>Diagnosis</th>
+      <th>Medicines</th>
+      <th>Date</th>
+      <th>Action</th>
+    </tr>`;
+
+  data.forEach(p => {
+    rx.innerHTML += `
+      <tr>
+        <td>${p.patientName}</td>
+        <td>${p.doctor}</td>
+        <td>${p.diagnosis}</td>
+        <td>${p.medicines}</td>
+        <td>${p.date}</td>
+        <td>
+          <button onclick="deletePrescription('${p._id}')">Delete</button>
+        </td>
+      </tr>`;
+  });
+}
+
+async function deleteAppointment(id) {
+  await fetch(`${API}/admin/appointments/${id}`, {
+    method: "DELETE",
+    credentials: "include"
+  });
+  loadAdminAppointments();
+}
+
+async function deletePrescription(id) {
+  await fetch(`${API}/admin/prescriptions/${id}`, {
+    method: "DELETE",
+    credentials: "include"
+  });
+}
+
+function adminLogout() {
+  localStorage.removeItem("adminLoggedIn");
+  location.href = "admin-login.html";
+}
+
+/* =================================================
+   AUTO LOAD BASED ON PAGE
+================================================= */
+document.addEventListener("DOMContentLoaded", () => {
+  if (typeof doctorDashboard !== "undefined" &&
+      localStorage.getItem("doctorLoggedIn") === "true") {
+    showDoctorDashboard();
+  }
+
+  if (typeof apt !== "undefined" &&
+      localStorage.getItem("adminLoggedIn") === "true") {
+    loadAdminAppointments();
+    loadAdminPrescriptions();
+  }
+});
