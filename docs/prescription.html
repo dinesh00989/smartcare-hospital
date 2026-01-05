@@ -22,7 +22,7 @@
 <!-- DOCTOR LOGIN -->
 <section class="section light" id="doctorLoginBox">
   <h3>🔐 Doctor Login</h3>
-  <input id="docUser" placeholder="Username (ex: drrao)">
+  <input id="docUser" placeholder="Doctor Username (drrao)">
   <input id="docPass" type="password" placeholder="Password">
   <button onclick="doctorLogin()">Login</button>
   <p id="loginError" style="color:red;"></p>
@@ -58,6 +58,7 @@
       <button onclick="savePrescription()">Save Prescription</button>
     </div>
 
+    <!-- PREVIEW -->
     <div class="card">
       <h3>🧾 Prescription Preview</h3>
       <p><b>Doctor:</b> <span id="pvDoctor">-</span></p>
@@ -75,7 +76,7 @@
 <script>
 const API = "https://smartcare-hospital.onrender.com";
 
-/* ===== TEMPLATES ===== */
+/* ===== Templates ===== */
 const templates = {
   fever: "Paracetamol 650mg – Twice daily\nCetirizine – Night",
   diabetes: "Metformin 500mg – Twice daily",
@@ -83,83 +84,93 @@ const templates = {
   general: "Multivitamin – Once daily"
 };
 
-/* ===== LOGIN ===== */
-async function doctorLogin() {
-  const username = docUser.value.trim();
-  const password = docPass.value.trim();
-  loginError.textContent = "";
+/* ===== Doctor Login (Frontend Only) ===== */
+function doctorLogin() {
+  const u = docUser.value.trim().toLowerCase();
+  const p = docPass.value.trim();
 
-  try {
-    const res = await fetch(`${API}/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ username, password })
-    });
+  const doctors = {
+    drrao: "Dr. A. Rao",
+    drmeena: "Dr. Meena S.",
+    drkumar: "Dr. K. Kumar",
+    drsharma: "Dr. P. Sharma"
+  };
 
-    if (!res.ok) throw new Error();
-
-    const data = await res.json();
-    if (data.role !== "doctor") throw new Error();
-
-    doctorLoginBox.style.display = "none";
-    prescriptionModule.style.display = "block";
-    doctorNameText.textContent = username;
-    pvDoctor.textContent = username;
-    pvDate.textContent = new Date().toLocaleDateString();
-
-  } catch {
-    loginError.textContent = "Invalid doctor credentials";
+  if (doctors[u] && p === "doctor") {
+    localStorage.setItem("doctorName", doctors[u]);
+    showModule(doctors[u]);
+  } else {
+    loginError.textContent = "Invalid credentials";
   }
 }
 
-/* ===== LOGOUT ===== */
-function doctorLogout() {
-  fetch(`${API}/logout`, { method: "POST", credentials: "include" })
-    .then(() => location.reload());
+function showModule(name) {
+  doctorLoginBox.style.display = "none";
+  prescriptionModule.style.display = "block";
+  doctorNameText.textContent = name;
+  pvDoctor.textContent = name;
+  pvDate.textContent = new Date().toLocaleDateString();
 }
 
-/* ===== TEMPLATE ===== */
+function doctorLogout() {
+  localStorage.removeItem("doctorName");
+  location.reload();
+}
+
+/* ===== Template Apply ===== */
 function applyTemplate() {
   const key = prescriptionTemplate.value;
   if (templates[key]) {
     medicine.value = templates[key];
-    pvTemplate.textContent = prescriptionTemplate.options[prescriptionTemplate.selectedIndex].text;
+    pvTemplate.textContent =
+      prescriptionTemplate.options[prescriptionTemplate.selectedIndex].text;
     updatePreview();
   }
 }
 
-/* ===== PREVIEW ===== */
+/* ===== Preview ===== */
 function updatePreview() {
   pvPatient.textContent = prePatient.value || "-";
   pvMedicine.textContent = medicine.value || "-";
 }
 
-/* ===== SAVE TO BACKEND ===== */
-function savePrescription() {
+/* ===== SAVE (SAME PATTERN AS APPOINTMENTS) ===== */
+async function savePrescription() {
   const data = {
-    patientName: prePatient.value,
-    doctor: pvDoctor.textContent,
+    patientName: prePatient.value.trim(),
+    doctor: localStorage.getItem("doctorName"),
     diagnosis: pvTemplate.textContent,
-    medicines: medicine.value,
+    medicines: medicine.value.trim(),
     date: new Date().toLocaleDateString()
   };
 
-  fetch(`${API}/prescriptions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify(data)
-  })
-  .then(res => {
+  if (!data.patientName || !data.medicines) {
+    alert("Fill all fields");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/prescriptions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
+
     if (!res.ok) throw new Error();
-    alert("Prescription saved");
+
+    alert("✅ Prescription saved");
     prePatient.value = "";
     medicine.value = "";
     updatePreview();
-  })
-  .catch(() => alert("Error saving prescription"));
+
+  } catch {
+    alert("❌ Error saving prescription");
+  }
 }
+
+/* ===== Auto Restore Login ===== */
+const savedDoctor = localStorage.getItem("doctorName");
+if (savedDoctor) showModule(savedDoctor);
 </script>
 
 </body>
