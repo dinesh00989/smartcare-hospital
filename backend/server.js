@@ -1,6 +1,6 @@
 /****************************************
- SMARTCARE – FINAL STABLE BACKEND SERVER
- Auth + Admin + Doctor + Appointments + Prescriptions
+ SMARTCARE – FINAL GLOBAL BACKEND SERVER
+ GitHub Pages + Render Compatible
 *****************************************/
 
 require("dotenv").config();
@@ -8,19 +8,16 @@ const express = require("express");
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const cors = require("cors");
-const session = require("express-session");
 
 const app = express();
 
-/* ================= MIDDLEWARE ================= */
+/* ============ MIDDLEWARE ============ */
 app.use(express.json());
-
 app.use(cors({
-  origin: "https://dinesh00989.github.io",
-  credentials: true
+  origin: "https://dinesh00989.github.io"
 }));
 
-/* ================= DATABASE ================= */
+/* ============ DATABASE ============ */
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB Connected"))
   .catch(err => {
@@ -28,21 +25,7 @@ mongoose.connect(process.env.MONGO_URI)
     process.exit(1);
   });
 
-/* ================= SESSION ================= */
-app.use(session({
-  name: "smartcare.sid",
-  secret: "smartcare-secret",
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    httpOnly: true,
-    secure: true,
-    sameSite: "none",
-    maxAge: 1000 * 60 * 60
-  }
-}));
-
-/* ================= MODELS ================= */
+/* ============ MODELS ============ */
 const User = mongoose.model("User", new mongoose.Schema({
   username: String,
   password: String,
@@ -63,7 +46,7 @@ const Prescription = mongoose.model("Prescription", new mongoose.Schema({
   date: String
 }));
 
-/* ================= SEED USERS (RUN ONCE) ================= */
+/* ============ SEED USERS (ONCE) ============ */
 (async function seedUsers() {
   if (await User.countDocuments()) return;
 
@@ -80,32 +63,15 @@ const Prescription = mongoose.model("Prescription", new mongoose.Schema({
     await User.create({ ...u, password: hash });
   }
 
-  console.log("👥 Default users created");
+  console.log("👥 Default users seeded");
 })();
 
-/* ================= AUTH HELPERS ================= */
-function isLoggedIn(req, res, next) {
-  if (!req.session.user)
-    return res.status(401).json({ message: "Login required" });
-  next();
-}
-
-function requireRole(role) {
-  return (req, res, next) => {
-    if (req.session.user.role !== role)
-      return res.status(403).json({ message: "Access denied" });
-    next();
-  };
-}
-
-/* ================= ROUTES ================= */
-
-// Health check
+/* ============ HEALTH CHECK ============ */
 app.get("/", (_, res) => {
   res.send("🚀 SmartCare Backend Running");
 });
 
-/* ---------- AUTH ---------- */
+/* ============ AUTH ============ */
 app.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
@@ -115,70 +81,49 @@ app.post("/login", async (req, res) => {
   const ok = await bcrypt.compare(password, user.password);
   if (!ok) return res.status(401).json({});
 
-  req.session.user = {
-    id: user._id,
-    username: user.username,
-    role: user.role
-  };
-
-  res.json({ role: user.role });
+  res.json({ role: user.role, username });
 });
 
-app.post("/logout", (req, res) => {
-  req.session.destroy(() => {
-    res.clearCookie("smartcare.sid");
-    res.json({ message: "Logged out" });
-  });
-});
-
-/* ---------- APPOINTMENTS ---------- */
+/* ============ APPOINTMENTS ============ */
 app.post("/appointments", async (req, res) => {
   const data = await Appointment.create(req.body);
   res.json(data);
 });
 
 /* Doctor view */
-app.get("/appointments", isLoggedIn, requireRole("doctor"), async (req, res) => {
-  const map = {
-    drrao: "Dr. A. Rao",
-    drmeena: "Dr. Meena S.",
-    drkumar: "Dr. K. Kumar",
-    drsharma: "Dr. P. Sharma"
-  };
-
-  const doctor = map[req.session.user.username];
-  const data = await Appointment.find({ doctor });
+app.get("/appointments/:doctor", async (req, res) => {
+  const data = await Appointment.find({ doctor: req.params.doctor });
   res.json(data);
 });
 
 /* Admin view */
-app.get("/admin/appointments", isLoggedIn, requireRole("admin"), async (_, res) => {
+app.get("/admin/appointments", async (_, res) => {
   const data = await Appointment.find().sort({ _id: -1 });
   res.json(data);
 });
 
-app.delete("/admin/appointments/:id", isLoggedIn, requireRole("admin"), async (req, res) => {
+app.delete("/admin/appointments/:id", async (req, res) => {
   await Appointment.findByIdAndDelete(req.params.id);
   res.json({ message: "Deleted" });
 });
 
-/* ---------- PRESCRIPTIONS ---------- */
-app.post("/prescriptions", isLoggedIn, requireRole("doctor"), async (req, res) => {
+/* ============ PRESCRIPTIONS ============ */
+app.post("/prescriptions", async (req, res) => {
   const data = await Prescription.create(req.body);
   res.json(data);
 });
 
-app.get("/admin/prescriptions", isLoggedIn, requireRole("admin"), async (_, res) => {
+app.get("/admin/prescriptions", async (_, res) => {
   const data = await Prescription.find().sort({ _id: -1 });
   res.json(data);
 });
 
-app.delete("/admin/prescriptions/:id", isLoggedIn, requireRole("admin"), async (req, res) => {
+app.delete("/admin/prescriptions/:id", async (req, res) => {
   await Prescription.findByIdAndDelete(req.params.id);
   res.json({ message: "Deleted" });
 });
 
-/* ================= START ================= */
+/* ============ START ============ */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
