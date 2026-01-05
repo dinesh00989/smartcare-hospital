@@ -1,18 +1,19 @@
 /*************************************************
- SMARTCARE – FINAL FRONTEND MASTER SCRIPT
- Doctors • Appointments • Prescriptions • Admin
+ SMARTCARE – FINAL STABLE FRONTEND SCRIPT
+ Appointments • Doctors • Prescriptions • Admin
+ GitHub Pages + Render + Atlas (NO sessions)
 **************************************************/
 
-/* ========= CONFIG ========= */
+/* ================= CONFIG ================= */
 const API = "https://smartcare-hospital.onrender.com";
 
-/* ========= UTIL ========= */
+/* ================= UTIL ================= */
 function $(id) {
   return document.getElementById(id);
 }
 
 /* =================================================
-   APPOINTMENTS (PUBLIC)
+   APPOINTMENTS (PUBLIC – WORKING REFERENCE)
 ================================================= */
 async function addAppointment() {
   const patientName = $("aptPatient")?.value.trim();
@@ -44,40 +45,34 @@ async function addAppointment() {
 }
 
 /* =================================================
-   DOCTOR LOGIN (GLOBAL)
+   DOCTOR LOGIN (FRONTEND ONLY)
 ================================================= */
-async function doctorLogin() {
-  const username = $("docUser").value.trim().toLowerCase();
-  const password = $("docPass").value.trim();
+const DOCTORS = {
+  drrao: "Dr. A. Rao",
+  drmeena: "Dr. Meena S.",
+  drkumar: "Dr. K. Kumar",
+  drsharma: "Dr. P. Sharma"
+};
 
-  if (!username || !password) {
-    $("loginError").textContent = "Enter credentials";
-    return;
-  }
+function doctorLogin() {
+  const u = $("docUser").value.trim().toLowerCase();
+  const p = $("docPass").value.trim();
 
-  try {
-    const res = await fetch(`${API}/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ username, password })
-    });
-
-    if (!res.ok) throw new Error();
-
-    const data = await res.json();
-    if (data.role !== "doctor") throw new Error();
-
-    localStorage.setItem("doctorUser", username);
+  if (DOCTORS[u] && p === "doctor") {
+    localStorage.setItem("doctorName", DOCTORS[u]);
     showDoctorDashboard();
-
-  } catch {
-    $("loginError").textContent = "Invalid login";
+  } else {
+    $("loginError").textContent = "Invalid credentials";
   }
 }
 
+function doctorLogout() {
+  localStorage.removeItem("doctorName");
+  location.reload();
+}
+
 /* =================================================
-   DOCTOR DASHBOARD
+   DOCTOR DASHBOARD (FETCH + FILTER)
 ================================================= */
 async function showDoctorDashboard() {
   if ($("doctorLoginBox")) $("doctorLoginBox").style.display = "none";
@@ -88,23 +83,23 @@ async function showDoctorDashboard() {
 async function loadDoctorAppointments() {
   if (!$("doctorAppointmentCards")) return;
 
+  const doctor = localStorage.getItem("doctorName");
+  const wrap = $("doctorAppointmentCards");
+  wrap.innerHTML = "<p>Loading...</p>";
+
   try {
-    const res = await fetch(`${API}/appointments`, {
-      credentials: "include"
-    });
-
-    if (!res.ok) throw new Error();
-
+    const res = await fetch(`${API}/appointments-all`);
     const data = await res.json();
-    const wrap = $("doctorAppointmentCards");
+
+    const my = data.filter(a => a.doctor === doctor);
     wrap.innerHTML = "";
 
-    if (!data.length) {
+    if (!my.length) {
       wrap.innerHTML = "<p>No appointments yet</p>";
       return;
     }
 
-    data.forEach(a => {
+    my.forEach(a => {
       const card = document.createElement("div");
       card.className = "card";
       card.innerHTML = `
@@ -115,33 +110,19 @@ async function loadDoctorAppointments() {
     });
 
   } catch {
-    $("doctorAppointmentCards").innerHTML =
-      "<p>Login required</p>";
+    wrap.innerHTML = "<p>Error loading appointments</p>";
   }
 }
 
 /* =================================================
-   DOCTOR LOGOUT
-================================================= */
-async function doctorLogout() {
-  await fetch(`${API}/logout`, {
-    method: "POST",
-    credentials: "include"
-  });
-
-  localStorage.removeItem("doctorUser");
-  location.reload();
-}
-
-/* =================================================
-   PRESCRIPTIONS (DOCTOR)
+   PRESCRIPTIONS (PURE POST – SAME AS APPOINTMENTS)
 ================================================= */
 async function savePrescription() {
   const patientName = $("prePatient").value.trim();
   const medicines = $("medicine").value.trim();
-  const doctor = localStorage.getItem("doctorUser");
+  const doctor = localStorage.getItem("doctorName");
 
-  if (!patientName || !medicines) {
+  if (!patientName || !medicines || !doctor) {
     alert("Fill all fields");
     return;
   }
@@ -150,7 +131,6 @@ async function savePrescription() {
     const res = await fetch(`${API}/prescriptions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials: "include",
       body: JSON.stringify({
         patientName,
         doctor,
@@ -166,36 +146,41 @@ async function savePrescription() {
     $("medicine").value = "";
 
   } catch {
-    alert("❌ Login required or error saving prescription");
+    alert("❌ Failed to save prescription");
   }
 }
 
 /* =================================================
-   ADMIN (FRONTEND SAFE)
+   ADMIN LOGIN (FRONTEND ONLY)
 ================================================= */
 function adminLogin() {
   const u = $("adminUser").value.trim();
   const p = $("adminPass").value.trim();
 
   if (u === "admin" && p === "admin") {
-    localStorage.setItem("adminLoggedIn", "true");
+    localStorage.setItem("admin", "true");
     location.href = "admin-dashboard.html";
   } else {
     $("loginError").textContent = "Invalid admin credentials";
   }
 }
 
+function adminLogout() {
+  localStorage.removeItem("admin");
+  location.href = "admin-login.html";
+}
+
 /* =================================================
-   ADMIN DASHBOARD DATA
+   ADMIN DASHBOARD (DIRECT API)
 ================================================= */
 async function loadAdminData() {
-  if (localStorage.getItem("adminLoggedIn") !== "true") {
+  if (localStorage.getItem("admin") !== "true") {
     location.href = "admin-login.html";
     return;
   }
 
   /* Appointments */
-  fetch(`${API}/admin/appointments`, { credentials: "include" })
+  fetch(`${API}/admin/appointments`)
     .then(r => r.json())
     .then(d => {
       d.forEach(a => {
@@ -204,15 +189,13 @@ async function loadAdminData() {
             <td>${a.patientName}</td>
             <td>${a.doctor}</td>
             <td>${a.date}</td>
-            <td>
-              <button onclick="deleteAppointment('${a._id}')">Delete</button>
-            </td>
+            <td><button onclick="deleteAppointment('${a._id}')">Delete</button></td>
           </tr>`;
       });
     });
 
   /* Prescriptions */
-  fetch(`${API}/admin/prescriptions`, { credentials: "include" })
+  fetch(`${API}/admin/prescriptions`)
     .then(r => r.json())
     .then(d => {
       d.forEach(p => {
@@ -222,37 +205,30 @@ async function loadAdminData() {
             <td>${p.doctor}</td>
             <td>${p.medicines}</td>
             <td>${p.date}</td>
-            <td>
-              <button onclick="deletePrescription('${p._id}')">Delete</button>
-            </td>
+            <td><button onclick="deletePrescription('${p._id}')">Delete</button></td>
           </tr>`;
       });
     });
 }
 
 function deleteAppointment(id) {
-  fetch(`${API}/admin/appointments/${id}`, {
-    method: "DELETE",
-    credentials: "include"
-  }).then(() => location.reload());
+  fetch(`${API}/admin/appointments/${id}`, { method: "DELETE" })
+    .then(() => location.reload());
 }
 
 function deletePrescription(id) {
-  fetch(`${API}/admin/prescriptions/${id}`, {
-    method: "DELETE",
-    credentials: "include"
-  }).then(() => location.reload());
+  fetch(`${API}/admin/prescriptions/${id}`, { method: "DELETE" })
+    .then(() => location.reload());
 }
 
 /* =================================================
    AUTO INIT
 ================================================= */
 document.addEventListener("DOMContentLoaded", () => {
-  if (localStorage.getItem("doctorUser") && $("doctorDashboard")) {
+  if (localStorage.getItem("doctorName") && $("doctorDashboard")) {
     showDoctorDashboard();
   }
-
-  if (typeof loadAdminData === "function" && $("apt")) {
+  if ($("apt") && typeof loadAdminData === "function") {
     loadAdminData();
   }
 });
