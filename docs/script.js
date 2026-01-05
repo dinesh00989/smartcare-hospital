@@ -1,19 +1,18 @@
 /*************************************************
- SMARTCARE – FINAL STABLE FRONTEND SCRIPT
- Appointments • Doctors • Prescriptions • Admin
- GitHub Pages + Render + Atlas (NO sessions)
+ SMARTCARE – FINAL FRONTEND MASTER SCRIPT
+ GitHub Pages + Render Compatible
 **************************************************/
 
-/* ================= CONFIG ================= */
+/* ========== CONFIG ========== */
 const API = "https://smartcare-hospital.onrender.com";
 
-/* ================= UTIL ================= */
+/* ========== UTIL ========== */
 function $(id) {
   return document.getElementById(id);
 }
 
 /* =================================================
-   APPOINTMENTS (PUBLIC – WORKING REFERENCE)
+   APPOINTMENTS (PUBLIC)
 ================================================= */
 async function addAppointment() {
   const patientName = $("aptPatient")?.value.trim();
@@ -34,72 +33,73 @@ async function addAppointment() {
 
     if (!res.ok) throw new Error();
 
-    alert("✅ Appointment booked");
+    alert("✅ Appointment booked successfully");
     $("aptPatient").value = "";
     $("aptDate").value = "";
     $("aptDoctor").value = "";
 
   } catch {
-    alert("❌ Failed to book appointment");
+    alert("❌ Error saving appointment");
   }
 }
 
 /* =================================================
-   DOCTOR LOGIN (FRONTEND ONLY)
+   DOCTOR LOGIN
 ================================================= */
-const DOCTORS = {
-  drrao: "Dr. A. Rao",
-  drmeena: "Dr. Meena S.",
-  drkumar: "Dr. K. Kumar",
-  drsharma: "Dr. P. Sharma"
-};
+async function doctorLogin() {
+  const username = $("docUser").value.trim().toLowerCase();
+  const password = $("docPass").value.trim();
+  $("loginError").textContent = "";
 
-function doctorLogin() {
-  const u = $("docUser").value.trim().toLowerCase();
-  const p = $("docPass").value.trim();
+  try {
+    const res = await fetch(`${API}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    });
 
-  if (DOCTORS[u] && p === "doctor") {
-    localStorage.setItem("doctorName", DOCTORS[u]);
+    if (!res.ok) throw new Error();
+
+    const data = await res.json();
+    if (data.role !== "doctor") throw new Error();
+
+    localStorage.setItem("doctorName", data.username);
     showDoctorDashboard();
-  } else {
-    $("loginError").textContent = "Invalid credentials";
+
+  } catch {
+    $("loginError").textContent = "Invalid doctor credentials";
   }
 }
 
-function doctorLogout() {
-  localStorage.removeItem("doctorName");
-  location.reload();
-}
-
 /* =================================================
-   DOCTOR DASHBOARD (FETCH + FILTER)
+   DOCTOR DASHBOARD
 ================================================= */
-async function showDoctorDashboard() {
+function showDoctorDashboard() {
   if ($("doctorLoginBox")) $("doctorLoginBox").style.display = "none";
   if ($("doctorDashboard")) $("doctorDashboard").style.display = "block";
   loadDoctorAppointments();
 }
 
 async function loadDoctorAppointments() {
-  if (!$("doctorAppointmentCards")) return;
-
   const doctor = localStorage.getItem("doctorName");
   const wrap = $("doctorAppointmentCards");
-  wrap.innerHTML = "<p>Loading...</p>";
+  if (!doctor || !wrap) return;
+
+  wrap.innerHTML = "Loading...";
 
   try {
-    const res = await fetch(`${API}/appointments-all`);
-    const data = await res.json();
+    const res = await fetch(`${API}/appointments/${encodeURIComponent(mapDoctor(doctor))}`);
+    if (!res.ok) throw new Error();
 
-    const my = data.filter(a => a.doctor === doctor);
+    const data = await res.json();
     wrap.innerHTML = "";
 
-    if (!my.length) {
+    if (!data.length) {
       wrap.innerHTML = "<p>No appointments yet</p>";
       return;
     }
 
-    my.forEach(a => {
+    data.forEach(a => {
       const card = document.createElement("div");
       card.className = "card";
       card.innerHTML = `
@@ -114,13 +114,31 @@ async function loadDoctorAppointments() {
   }
 }
 
+function mapDoctor(username) {
+  return {
+    drrao: "Dr. A. Rao",
+    drmeena: "Dr. Meena S.",
+    drkumar: "Dr. K. Kumar",
+    drsharma: "Dr. P. Sharma"
+  }[username];
+}
+
 /* =================================================
-   PRESCRIPTIONS (PURE POST – SAME AS APPOINTMENTS)
+   DOCTOR LOGOUT
+================================================= */
+function doctorLogout() {
+  localStorage.removeItem("doctorName");
+  location.reload();
+}
+
+/* =================================================
+   PRESCRIPTIONS (DOCTOR)
 ================================================= */
 async function savePrescription() {
   const patientName = $("prePatient").value.trim();
   const medicines = $("medicine").value.trim();
-  const doctor = localStorage.getItem("doctorName");
+  const doctorKey = localStorage.getItem("doctorName");
+  const doctor = mapDoctor(doctorKey);
 
   if (!patientName || !medicines || !doctor) {
     alert("Fill all fields");
@@ -134,6 +152,7 @@ async function savePrescription() {
       body: JSON.stringify({
         patientName,
         doctor,
+        diagnosis: $("pvTemplate")?.textContent || "",
         medicines,
         date: new Date().toLocaleDateString()
       })
@@ -146,35 +165,30 @@ async function savePrescription() {
     $("medicine").value = "";
 
   } catch {
-    alert("❌ Failed to save prescription");
+    alert("❌ Error saving prescription");
   }
 }
 
 /* =================================================
-   ADMIN LOGIN (FRONTEND ONLY)
+   ADMIN LOGIN (FRONTEND SAFE)
 ================================================= */
 function adminLogin() {
   const u = $("adminUser").value.trim();
   const p = $("adminPass").value.trim();
 
   if (u === "admin" && p === "admin") {
-    localStorage.setItem("admin", "true");
+    localStorage.setItem("adminLoggedIn", "true");
     location.href = "admin-dashboard.html";
   } else {
     $("loginError").textContent = "Invalid admin credentials";
   }
 }
 
-function adminLogout() {
-  localStorage.removeItem("admin");
-  location.href = "admin-login.html";
-}
-
 /* =================================================
-   ADMIN DASHBOARD (DIRECT API)
+   ADMIN DASHBOARD
 ================================================= */
 async function loadAdminData() {
-  if (localStorage.getItem("admin") !== "true") {
+  if (localStorage.getItem("adminLoggedIn") !== "true") {
     location.href = "admin-login.html";
     return;
   }
@@ -228,7 +242,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (localStorage.getItem("doctorName") && $("doctorDashboard")) {
     showDoctorDashboard();
   }
-  if ($("apt") && typeof loadAdminData === "function") {
+  if ($("apt") && $("rx")) {
     loadAdminData();
   }
 });
