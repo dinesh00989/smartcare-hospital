@@ -1,105 +1,56 @@
-\<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Admin Login | SmartCare</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="style.css" />
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
   <style>
-    body {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: linear-gradient(135deg, #eef2ff, #f8fafc);
+    body{
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:linear-gradient(135deg,#eef2ff,#f8fafc);
     }
-
-    .login-card {
-      width: 100%;
-      max-width: 360px;
-      background: white;
-      padding: 32px;
-      border-radius: 18px;
-      box-shadow: 0 20px 45px rgba(0,0,0,0.12);
-      animation: fadeIn 0.4s ease;
+    .login-card{
+      width:100%;
+      max-width:360px;
+      background:white;
+      padding:32px;
+      border-radius:18px;
+      box-shadow:0 20px 45px rgba(0,0,0,.12);
     }
-
-    .login-card h2 {
-      text-align: center;
-      margin-bottom: 22px;
-    }
-
-    .login-card button {
-      width: 100%;
-      margin-top: 18px;
-    }
-
-    .error {
-      color: #dc2626;
-      font-size: 14px;
-      text-align: center;
-      margin-top: 12px;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+    .login-card h2{text-align:center}
+    .login-card button{width:100%}
+    .error{color:red;text-align:center;margin-top:10px}
   </style>
 </head>
-
 <body>
 
-  <div class="login-card">
-    <h2>🔐 Admin Login</h2>
+<div class="login-card">
+  <h2>🔐 Admin Login</h2>
 
-    <input id="adminUser" placeholder="Admin ID" autocomplete="off" />
-    <input id="adminPass" type="password" placeholder="Password" />
+  <input id="adminUser" placeholder="Admin ID">
+  <input id="adminPass" type="password" placeholder="Password">
 
-    <button onclick="adminLogin()">Login</button>
+  <button onclick="login()">Login</button>
+  <div id="err" class="error"></div>
+</div>
 
-    <div id="loginError" class="error"></div>
-  </div>
+<script>
+function login(){
+  const u = adminUser.value.trim();
+  const p = adminPass.value.trim();
 
-  <script>
-    const API = "https://smartcare-hospital.onrender.com";
-
-    async function adminLogin() {
-      const username = adminUser.value.trim();
-      const password = adminPass.value.trim();
-      loginError.textContent = "";
-
-      if (!username || !password) {
-        loginError.textContent = "Enter admin credentials";
-        return;
-      }
-
-      try {
-        const res = await fetch(`${API}/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ username, password })
-        });
-
-        if (!res.ok) throw new Error();
-
-        const data = await res.json();
-
-        if (data.role !== "admin") {
-          loginError.textContent = "Admin access only";
-          return;
-        }
-
-        // ✅ backend-authenticated admin
-        window.location.href = "admin-dashboard.html";
-
-      } catch {
-        loginError.textContent = "Invalid admin credentials";
-      }
-    }
-  </script>
+  if(u==="admin" && p==="admin"){
+    localStorage.setItem("admin","true");
+    location.href="admin-dashboard.html";
+  }else{
+    err.textContent="Invalid credentials";
+  }
+}
+</script>
 
 </body>
 </html>
